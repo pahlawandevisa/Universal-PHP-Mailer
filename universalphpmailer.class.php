@@ -3,7 +3,7 @@
 /**
  * Universal PHP Mailer
  *
- * @version    0.3 (2016-10-16)
+ * @version    0.4 (2016-10-17 09:50:00 GMT)
  * @author     Peter Kahl <peter.kahl@colossalmind.com>
  * @copyright  2016 Peter Kahl
  * @license    Apache License, Version 2.0
@@ -30,7 +30,7 @@ class universalPHPmailer {
    *
    * @var string
    */
-  private $version = '0.3';
+  private $version = '0.4';
 
   public $sendto_name;
 
@@ -215,7 +215,7 @@ class universalPHPmailer {
         #################################################
         // only text/plain
         if (!empty($this->headerContentLang)) {
-          $headers[] = 'Content-Language: '.$this->headerContentLang.PHP_EOL;
+          $headers[] = 'Content-Language: '.$this->headerContentLang;
         }
         $headers[] = 'Content-type: text/plain; charset=utf-8';
         $headers[] = 'Content-Transfer-Encoding: '.$this->message_encoding;
@@ -252,7 +252,7 @@ class universalPHPmailer {
         #################################################
         // only text/html
         if (!empty($this->headerContentLang)) {
-          $headers[] = 'Content-Language: '.$this->headerContentLang.PHP_EOL;
+          $headers[] = 'Content-Language: '.$this->headerContentLang;
         }
         $headers[] = 'Content-type: text/html; charset=utf-8';
         $headers[] = 'Content-Transfer-Encoding: '.$this->message_encoding;
