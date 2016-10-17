@@ -117,7 +117,7 @@ class universalPHPmailer {
    */
   public $hostName;
 
-  public $message_id;
+  private $message_id;
 
   /**
    * Randomly generated string for boundaries
@@ -213,6 +213,9 @@ class universalPHPmailer {
       else {
         #################################################
         // only text/plain
+        if (!empty($this->headerContentLang)) {
+          $headers[] = 'Content-Language: '.$this->headerContentLang.PHP_EOL;
+        }
         $headers[] = 'Content-type: text/plain; charset=utf-8';
         $headers[] = 'Content-Transfer-Encoding: '.$this->message_encoding;
         $message   = $this->encode_body(trim($this->message_txt_plain));
@@ -247,6 +250,9 @@ class universalPHPmailer {
       else {
         #################################################
         // only text/html
+        if (!empty($this->headerContentLang)) {
+          $headers[] = 'Content-Language: '.$this->headerContentLang.PHP_EOL;
+        }
         $headers[] = 'Content-type: text/html; charset=utf-8';
         $headers[] = 'Content-Transfer-Encoding: '.$this->message_encoding;
         $message   = $this->encode_body(trim($this->message_txt_html));
