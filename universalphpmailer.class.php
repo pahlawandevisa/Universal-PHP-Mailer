@@ -162,6 +162,7 @@ class universalPHPmailer {
         $headers[] = $this->encode_header($key, $val);
       }
     }
+    $headers[] = 'User-Agent: universalPHPmailer/'$this->version.' (https://github.com/peterkahl/Universal-PHP-Mailer)';
     $headers[] = 'MIME-Version: 1.0';
 
     // Determine message type
