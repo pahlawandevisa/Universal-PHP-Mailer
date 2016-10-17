@@ -3,7 +3,7 @@
 /**
  * Universal PHP Mailer
  *
- * @version    0.4.1 (2016-10-17 10:13:00 GMT)
+ * @version    0.4.2 (2016-10-17 10:18:00 GMT)
  * @author     Peter Kahl <peter.kahl@colossalmind.com>
  * @copyright  2016 Peter Kahl
  * @license    Apache License, Version 2.0
@@ -30,7 +30,7 @@ class universalPHPmailer {
    *
    * @var string
    */
-  private $version = '0.4.1';
+  private $version = '0.4.2';
 
   public $sendto_name;
 
@@ -162,7 +162,7 @@ class universalPHPmailer {
         $headers[] = $this->encode_header($key, $val);
       }
     }
-    $headers[] = 'User-Agent: universalPHPmailer/'$this->version.' (https://github.com/peterkahl/Universal-PHP-Mailer)';
+    $headers[] = 'User-Agent: universalPHPmailer/'.$this->version.' (https://github.com/peterkahl/Universal-PHP-Mailer)';
     $headers[] = 'MIME-Version: 1.0';
 
     // Determine message type
