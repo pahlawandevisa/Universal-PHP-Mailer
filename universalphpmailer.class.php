@@ -3,7 +3,7 @@
 /**
  * Universal PHP Mailer
  *
- * @version    0.4 (2016-10-17 09:50:00 GMT)
+ * @version    0.4.1 (2016-10-17 10:13:00 GMT)
  * @author     Peter Kahl <peter.kahl@colossalmind.com>
  * @copyright  2016 Peter Kahl
  * @license    Apache License, Version 2.0
@@ -30,7 +30,7 @@ class universalPHPmailer {
    *
    * @var string
    */
-  private $version = '0.4';
+  private $version = '0.4.1';
 
   public $sendto_name;
 
@@ -245,7 +245,7 @@ class universalPHPmailer {
         $message .= $this->generate_inline_images();
         //=================================
         // BOUNDARY
-        $message .= '--'.$this->getBoundary('multipart/related').'--'.PHP_EOL.PHP_EOL; // End
+        $message .= '--'.$this->getBoundary('multipart/related').'--'.PHP_EOL; // End
         #################################################
       }
       else {
