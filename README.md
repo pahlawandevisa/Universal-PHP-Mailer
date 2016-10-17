@@ -62,7 +62,7 @@ if (!empty($msgID)) {
 
 ```
 
-## Send text/plain + text/html:
+## Send text/html + inline images:
 ```php
 <?php
 
@@ -77,17 +77,20 @@ $mailor->from_name         = 'James Jones';
 $mailor->from_mail         = 'james.jones@anotherdomain';
 $mailor->hostName          = 'myserver.tld';
 
-$mailor->message_txt_plain = 'Hi John,
+$imageKey = 0;
+$imagePath = '/some/path/imageA.jpg';
+$tag[$imageKey] = $mailor->processImg($imagePath, $imageKey); // This gives us the CID
 
-I am testing this mailer from GitHub. Please let me know if you\'ve received this message.
-
-Best regards,
-J.J.';
+$imageKey = 1;
+$imagePath = '/some/path/imageB.png';
+$tag[$imageKey] = $mailor->processImg($imagePath, $imageKey); // This gives us the CID
 
 $mailor->message_txt_html  = '<body>
   <p>Hi John,</p>
   <p>I am testing this mailer from GitHub. Please let me know if you\'ve received this message.</p>
   <p>Best regards,<br>J.J.</p>
+  <div><img src="cid:'.$tag[0].'" width="200" height="100"></div>
+  <div><img src="cid:'.$tag[1].'" width="200" height="50"></div>
 </body>';
 
 $msgID = $mailor->sendMessage();
