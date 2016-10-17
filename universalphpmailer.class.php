@@ -30,7 +30,7 @@ class universalPHPmailer {
    *
    * @var string
    */
-  public $version = '0.3';
+  private $version = '0.3';
 
   public $sendto_name;
 
