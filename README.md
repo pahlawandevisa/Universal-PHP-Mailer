@@ -16,7 +16,7 @@ $mailor->from_name         = 'James Jones';
 $mailor->from_mail         = 'james.jones@anotherdomain';
 $mailor->hostName          = 'myserver.tld';
 
-$mailor->message_txt_plain = 'Hi John,
+$mailor->textPlain = 'Hi John,
 
 I am testing this mailer from GitHub. Please let me know if you\'ve received this message.
 
@@ -46,7 +46,7 @@ $mailor->from_name         = 'James Jones';
 $mailor->from_mail         = 'james.jones@anotherdomain';
 $mailor->hostName          = 'myserver.tld';
 
-$mailor->message_txt_html  = '<body>
+$mailor->textHtml  = '<body>
   <p>Hi John,</p>
   <p>I am testing this mailer from GitHub. Please let me know if you\'ve received this message.</p>
   <p>Best regards,<br>J.J.</p>
@@ -83,7 +83,7 @@ $imageKey = 1;
 $imagePath = '/some/path/imageB.png';
 $tag[$imageKey] = $mailor->processImg($imagePath, $imageKey); // This gives us the CID
 
-$mailor->message_txt_html  = '<body>
+$mailor->textHtml  = '<body>
   <p>Hi John,</p>
   <p>I am testing this mailer from GitHub. Please let me know if you\'ve received this message.</p>
   <p>Best regards,<br>J.J.</p>
@@ -122,14 +122,14 @@ $imageKey = 1;
 $imagePath = '/some/path/imageB.png';
 $tag[$imageKey] = $mailor->processImg($imagePath, $imageKey); // This gives us the CID
 
-$mailor->message_txt_plain = 'Hi John,
+$mailor->textPlain = 'Hi John,
 
 I am testing this mailer from GitHub. Please let me know if you\'ve received this message.
 
 Best regards,
 J.J.';
 
-$mailor->message_txt_html  = '<body>
+$mailor->textHtml  = '<body>
   <p>Hi John,</p>
   <p>I am testing this mailer from GitHub. Please let me know if you\'ve received this message.</p>
   <p>Best regards,<br>J.J.</p>
