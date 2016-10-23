@@ -3,7 +3,7 @@
 /**
  * Universal PHP Mailer
  *
- * @version    0.5 (2016-10-23 11:24:00 GMT)
+ * @version    0.5.1 (2016-10-23 22:25:00 GMT)
  * @author     Peter Kahl <peter.kahl@colossalmind.com>
  * @copyright  2016 Peter Kahl
  * @license    Apache License, Version 2.0
@@ -29,7 +29,7 @@ class universalPHPmailer {
    * Version
    * @var string
    */
-  private $version = '0.5';
+  private $version = '0.5.1';
 
   public $sendto_name;
 
@@ -196,7 +196,7 @@ class universalPHPmailer {
           if ($k == 0) {
             # First multipart section announcement
             $headers[] = 'Content-Type: '.$multiTypes[$k].';';
-            $headers[] = "\tboundary=\"".$this->getBoundary($multiTypes[$k]);
+            $headers[] = "\tboundary=\"".$this->getBoundary($multiTypes[$k]).'"';
             #-----------------
             # boundary START
             $body .= '--'.$this->getBoundary($multiTypes[$k]).PHP_EOL;
@@ -205,7 +205,7 @@ class universalPHPmailer {
           else {
             # 2nd, 3rd ... announcement
             $body .= 'Content-Type: '.$multiTypes[$k].';'.PHP_EOL;
-            $body .= "\tboundary=\"".$this->getBoundary($multiTypes[$k]).PHP_EOL;
+            $body .= "\tboundary=\"".$this->getBoundary($multiTypes[$k]).'"'.PHP_EOL;
             $body .= PHP_EOL;
             #-----------------
             # boundary START
