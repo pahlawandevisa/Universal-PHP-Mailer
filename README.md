@@ -1,7 +1,5 @@
 # Universal-PHP-Mailer
-Generates MIME compliant mail (text/plain, text/html, multipart) and optional inline image attachments.
-
-It's work-in-progress. Surely will improve/expand as time goes. Stay tuned.
+Generates MIME compliant mail, be it just text/plain, text/html, multipart/...anything and pretty much any combination that makes sense, including attachment, or only attachments.
 
 ## Send text/plain:
 ```php
