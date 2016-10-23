@@ -3,7 +3,7 @@
 /**
  * Universal PHP Mailer
  *
- * @version    0.5.1 (2016-10-23 22:25:00 GMT)
+ * @version    0.5.2 (2016-10-23 23:39:00 GMT)
  * @author     Peter Kahl <peter.kahl@colossalmind.com>
  * @copyright  2016 Peter Kahl
  * @license    Apache License, Version 2.0
@@ -29,7 +29,7 @@ class universalPHPmailer {
    * Version
    * @var string
    */
-  private $version = '0.5.1';
+  private $version = '0.5.2';
 
   public $sendto_name;
 
@@ -199,7 +199,9 @@ class universalPHPmailer {
             $headers[] = "\tboundary=\"".$this->getBoundary($multiTypes[$k]).'"';
             #-----------------
             # boundary START
-            $body .= '--'.$this->getBoundary($multiTypes[$k]).PHP_EOL;
+            if (!empty($this->textPlain) || !empty($this->textHtml)) {
+              $body .= '--'.$this->getBoundary($multiTypes[$k]).PHP_EOL;
+            }
             #-----------------
           }
           else {
@@ -243,7 +245,7 @@ class universalPHPmailer {
           # down
           #-----------------
           if ($multiTypes[$k] == 'multipart/mixed') {
-            $body .= $this->generate_attachments($multiTypes[$k]).PHP_EOL;
+            $body .= $this->generate_attachments($multiTypes[$k]);
           }
           #-----------------
           # boundary END
@@ -255,6 +257,7 @@ class universalPHPmailer {
           $go = false;
         }
       }
+      $body = rtrim($body).PHP_EOL;
     }
     #=====================================================
     else {
