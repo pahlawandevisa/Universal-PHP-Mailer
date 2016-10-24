@@ -3,7 +3,7 @@
 /**
  * Universal PHP Mailer
  *
- * @version    0.5.2 (2016-10-23 23:39:00 GMT)
+ * @version    0.5.3 (2016-10-24 08:27:00 GMT)
  * @author     Peter Kahl <peter.kahl@colossalmind.com>
  * @copyright  2016 Peter Kahl
  * @license    Apache License, Version 2.0
@@ -29,19 +29,19 @@ class universalPHPmailer {
    * Version
    * @var string
    */
-  private $version = '0.5.2';
+  private $version = '0.5.3';
 
-  public $sendto_name;
+  public $toName;
 
-  public $sendto_mail;
+  public $toEmail;
 
-  public $from_name;
+  public $fromName;
 
-  public $from_mail;
+  public $fromEmail;
 
-  public $return_path;
+  public $returnPath;
 
-  public $message_subject;
+  public $subject;
 
   public $textPlain;
 
@@ -49,15 +49,15 @@ class universalPHPmailer {
 
   /**
    * @var string
-   * Valid values are ... 'base64' OR 'quoted-printable'
+   * Valid values are 'base64' OR 'quoted-printable'
    */
-  public $message_encoding;
+  public $textEncoding;
 
   /**
    * If set, will create header 'Content-Language: en-gb'
    * @var string (e.g. 'en-gb')
    */
-  public $headerContentLang;
+  public $textContentLanguage;
 
   /**
    * Specify custom headers, if any
@@ -69,7 +69,7 @@ class universalPHPmailer {
    *                'Bcc'         => 'recipient@somewhere',
    *                )
    */
-  public $custom_headers;
+  public $customHeaders;
 
   /**
    * Hostname for use in message ID and for Content-ID
@@ -77,7 +77,7 @@ class universalPHPmailer {
    */
   public $hostName;
 
-  private $message_id;
+  private $messageId;
 
   /**
    * Randomly generated string for boundaries
@@ -92,41 +92,55 @@ class universalPHPmailer {
   private $boundary;
 
   /**
-   * Maximum line length as per RFC2822
-   * https://tools.ietf.org/html/rfc2822#section-2.2.3
-   * @var integer
-   */
-  private $max_line_length = 76;
-
-  /**
    * Inline images
    * @var array
    */
-  public $inline_images;
+  private $inlineImage;
 
   /**
-   * Attachments
+   * The key of the inlineImage array
+   * @var integer
+   */
+  private $inlineImageKey;
+
+  /**
+   * Attachment
    * @var array
    */
-  public $attachments;
+  private $attachment;
 
-  #===================================================================
+  /**
+   * The key of the inlineImage array
+   * @var integer
+   */
+  private $attachmentKey;
+
+  #-------------------------------------------------------------------
+
+  public function __construct() {
+    $this->inlineImageKey = 0;
+    $this->inlineImage    = array();
+    $this->attachmentKey  = 0;
+    $this->attachment     = array();
+  }
+
+  #-------------------------------------------------------------------
 
   public function sendMessage() {
 
     $this->rbstr = false;
-    $this->set_encoding();
+    $this->setEncoding();
 
-    $to        = $this->endexplode('o: ', $this->encode_header('To', $this->sanitize_name($this->sendto_name), '<'.$this->sendto_mail.'>'));
-    $subject   = $this->endexplode('ubject: ', $this->encode_header('Subject', $this->message_subject));
+    $to        = $this->endExplode('o: ', $this->encodeHeader('To', $this->sanitizeName($this->toName), '<'.$this->toEmail.'>'));
+    $subject   = $this->endExplode('ubject: ', $this->encodeHeader('Subject', $this->subject));
     $body      = '';
     $headers   = array();
-    $headers[] = $this->header_date();
-    $headers[] = $this->header_msg_id();
-    $headers[] = $this->header_from();
-    if (!empty($this->custom_headers) && is_array($this->custom_headers)) {
-      foreach ($this->custom_headers as $key => $val) {
-        $headers[] = $this->encode_header($key, $val);
+    $headers[] = $this->getHeaderDate();
+    $headers[] = $this->getHeaderMessageId();
+    $headers[] = $this->getHeaderFrom();
+    if (!empty($this->customHeaders) && is_array($this->customHeaders)) {
+      foreach ($this->customHeaders as $key => $val) {
+        $headers[] = $this->encodeHeader($key, $val);
       }
     }
     $headers[] = 'X-Mailer: universalPHPmailer/'.$this->version.' (https://github.com/peterkahl/Universal-PHP-Mailer)';
@@ -137,12 +151,12 @@ class universalPHPmailer {
 
     #=====================================================
 
-    if (!empty($this->attachments) && count($this->attachments) > 1 && empty($this->textPlain) && empty($this->textHtml)) {
-      # Multiple attachments and nothing else
+    if (!empty($this->attachment) && count($this->attachment) > 1 && empty($this->textPlain) && empty($this->textHtml)) {
+      # Multiple attachment and nothing else
       $i++;
       $multiTypes[$i] = 'multipart/mixed';
     }
-    elseif (!empty($this->attachments) && (!empty($this->textPlain) || !empty($this->textHtml))) {
+    elseif (!empty($this->attachment) && (!empty($this->textPlain) || !empty($this->textHtml))) {
       $i++;
       $multiTypes[$i] = 'multipart/mixed';
       #----
@@ -156,7 +170,7 @@ class universalPHPmailer {
         }
       }
       elseif (!empty($this->textHtml)) {
-        if (!empty($this->inline_images)) {
+        if (!empty($this->inlineImage)) {
           $i++;
           $multiTypes[$i] = 'multipart/related';
         }
@@ -167,7 +181,7 @@ class universalPHPmailer {
       }
     }
     else {
-      # No attachments
+      # No attachment
       if (!empty($this->textPlain) && !empty($this->textHtml)) {
         $i++;
         $multiTypes[$i] = 'multipart/alternative';
@@ -175,7 +189,7 @@ class universalPHPmailer {
         $i++;
         $multiTypes[$i] = 'multipart/related';
       }
-      elseif (!empty($this->textHtml) && !empty($this->inline_images)) {
+      elseif (!empty($this->textHtml) && !empty($this->inlineImage)) {
         $i++;
         $multiTypes[$i] = 'multipart/related';
       }
@@ -216,27 +230,29 @@ class universalPHPmailer {
           }
           #-----------------
           if ($multiTypes[$k] == 'multipart/alternative') {
-            if (!empty($this->headerContentLang)) {
-              $body .= 'Content-Language: '.$this->headerContentLang.PHP_EOL;
+            if (!empty($this->textContentLanguage)) {
+              $body .= 'Content-Language: '.$this->textContentLanguage.PHP_EOL;
             }
             $body .= 'Content-type: text/plain; charset=utf-8'.PHP_EOL;
-            $body .= 'Content-Transfer-Encoding: '.$this->message_encoding.PHP_EOL;
+            $body .= 'Content-Transfer-Encoding: '.$this->textEncoding.PHP_EOL;
             $body .= PHP_EOL;
-            $body .= $this->encode_body(trim($this->textPlain)).PHP_EOL;
+            $body .= $this->encodeBody(trim($this->textPlain)).PHP_EOL;
             #-----------------
             # boundary
             $body .= '--'.$this->getBoundary($multiTypes[$k]).PHP_EOL;
             #-----------------
           }
           elseif ($multiTypes[$k] == 'multipart/related') {
-            if (!empty($this->headerContentLang)) {
-              $body .= 'Content-Language: '.$this->headerContentLang.PHP_EOL;
+            if (!empty($this->textContentLanguage)) {
+              $body .= 'Content-Language: '.$this->textContentLanguage.PHP_EOL;
             }
             $body .= 'Content-type: text/html; charset=utf-8'.PHP_EOL;
-            $body .= 'Content-Transfer-Encoding: '.$this->message_encoding.PHP_EOL;
+            $body .= 'Content-Transfer-Encoding: '.$this->textEncoding.PHP_EOL;
             $body .= PHP_EOL;
-            $body .= $this->encode_body(trim($this->textHtml)).PHP_EOL;
-            $body .= $this->generate_inline_images($multiTypes[$k]);
+            $body .= $this->encodeBody(trim($this->textHtml)).PHP_EOL;
+            if (!empty($this->inlineImage)) {
+              $body .= $this->generateInlineImageParts($multiTypes[$k]);
+            }
           }
           #-----------------
           $k++;
@@ -245,7 +261,7 @@ class universalPHPmailer {
           # down
           #-----------------
           if ($multiTypes[$k] == 'multipart/mixed') {
-            $body .= $this->generate_attachments($multiTypes[$k]);
+            $body .= $this->generateAttachmentParts($multiTypes[$k]);
           }
           #-----------------
           # boundary END
@@ -263,23 +279,23 @@ class universalPHPmailer {
     else {
       # Not multipart
       if (!empty($this->textPlain)) {
-        if (!empty($this->headerContentLang)) {
-          $headers[] = 'Content-Language: '.$this->headerContentLang;
+        if (!empty($this->textContentLanguage)) {
+          $headers[] = 'Content-Language: '.$this->textContentLanguage;
         }
         $headers[] = 'Content-type: text/plain; charset=utf-8';
-        $headers[] = 'Content-Transfer-Encoding: '.$this->message_encoding;
-        $body      = $this->encode_body(trim($this->textPlain));
+        $headers[] = 'Content-Transfer-Encoding: '.$this->textEncoding;
+        $body      = $this->encodeBody(trim($this->textPlain));
       }
       elseif (!empty($this->textHtml)) {
-        if (!empty($this->headerContentLang)) {
-          $headers[] = 'Content-Language: '.$this->headerContentLang;
+        if (!empty($this->textContentLanguage)) {
+          $headers[] = 'Content-Language: '.$this->textContentLanguage;
         }
         $headers[] = 'Content-type: text/html; charset=utf-8';
-        $headers[] = 'Content-Transfer-Encoding: '.$this->message_encoding;
-        $body      = $this->encode_body(trim($this->textHtml));
+        $headers[] = 'Content-Transfer-Encoding: '.$this->textEncoding;
+        $body      = $this->encodeBody(trim($this->textHtml));
       }
-      elseif (!empty($this->attachments)) { # Only 1 attachment
-        foreach ($this->attachments as $atk => $atv) {
+      elseif (!empty($this->attachment)) { # Only 1 attachment
+        foreach ($this->attachment as $atk => $atv) {
           $headers[] = 'Content-Type: '.$this->getMimeType($atv['file-extension']).';';
           $headers[] = "\tname=\"".$atv['original-filename'].'"';
           $headers[] = 'Content-Transfer-Encoding: base64';
@@ -298,22 +314,22 @@ class universalPHPmailer {
 
     $headers = implode(PHP_EOL, $headers).PHP_EOL;
 
-    if (empty($this->return_path)) {
-      $this->return_path = $this->from_mail;
+    if (empty($this->returnPath)) {
+      $this->returnPath = $this->fromEmail;
     }
 
-    $res = mail($to, $subject, $body, $headers, '-f'.$this->return_path);
+    $res = mail($to, $subject, $body, $headers, '-f'.$this->returnPath);
     if ($res !== false) {
-      return $this->message_id; # On success returns message ID.
+      return $this->messageId; # On success returns message ID.
     }
     return false;
   }
 
   #-------------------------------------------------------------------
 
-  private function generate_inline_images($boundaryKey) { # 'multipart/related'
+  private function generateInlineImageParts($boundaryKey) {
     $str = '';
-    foreach ($this->inline_images as $key => $val) {
+    foreach ($this->inlineImage as $key => $val) {
       $str .= '--'.$this->getBoundary($boundaryKey).PHP_EOL;
       $str .= 'Content-ID: <'.$val['content-id'].'>'.PHP_EOL;
       $str .= 'Content-Type: '.$this->getMimeType($val['file-extension']).'; name="'.$val['original-filename'].'"'.PHP_EOL;
@@ -327,30 +343,38 @@ class universalPHPmailer {
 
   #-------------------------------------------------------------------
 
-  public function processImg($filename, $key) {
+  /**
+   * Add an image to the private array inlineImage
+   * @param  string
+   * @return integer ... The cid, which you need in your HTML markup.
+   */
+  public function addInlineImage($filename) {
     if (empty($this->hostName)) {
       throw new Exception('Property hostName must be defined prior to calling this method');
     }
     if (!file_exists($filename)) {
-      throw new Exception('Could not read/find file "'.$filename.'"');
+      throw new Exception('Could not read file "'.$filename.'"');
     }
+
     $hash = substr(strtoupper(sha1($filename . microtime(true))), 0, 10);
-    $extension = $this->file_extension($filename);
+    $extension = $this->fileExtension($filename);
     $cid = $hash.'@'.$this->hostName;
-    #---
-    $this->inline_images[$key]['original-filename'] = $hash.'.'.$extension;
-    $this->inline_images[$key]['file-extension']    = $extension;
-    $this->inline_images[$key]['base64-data']       = base64_encode(file_get_contents($filename));
-    $this->inline_images[$key]['content-id']        = $cid;
-    #---
+
+    $this->inlineImage[$this->inlineImageKey]['original-filename'] = $hash.'.'.$extension;
+    $this->inlineImage[$this->inlineImageKey]['file-extension']    = $extension;
+    $this->inlineImage[$this->inlineImageKey]['base64-data']       = base64_encode(file_get_contents($filename));
+    $this->inlineImage[$this->inlineImageKey]['content-id']        = $cid;
+
+    $this->inlineImageKey++;
+
     return $cid;
   }
 
   #-------------------------------------------------------------------
 
-  private function generate_attachments($boundaryKey) {
+  private function generateAttachmentParts($boundaryKey) {
     $str = '';
-    foreach ($this->attachments as $key => $val) {
+    foreach ($this->attachment as $key => $val) {
       $str .= '--'.$this->getBoundary($boundaryKey).PHP_EOL;
       $str .= 'Content-Type: '.$this->getMimeType($val['file-extension']).';'.PHP_EOL;
       $str .= "\tname=\"".$val['original-filename'].'"'.PHP_EOL;
@@ -366,15 +390,17 @@ class universalPHPmailer {
 
   #-------------------------------------------------------------------
 
-  public function processAttachment($filename, $key) {
+  public function addAttachment($filename) {
     if (!file_exists($filename)) {
       throw new Exception('Could not read/find file "'.$filename.'"');
     }
-    $size = filesize($filename);
-    $this->attachments[$key]['original-filename'] = rawurlencode($this->endexplode('/', $filename));
-    $this->attachments[$key]['file-extension']    = $this->file_extension($filename);
-    $this->attachments[$key]['base64-data']       = base64_encode(file_get_contents($filename));
-    $this->attachments[$key]['size']              = $size;
+
+    $this->attachment[$this->attachmentKey]['original-filename'] = rawurlencode($this->endExplode('/', $filename));
+    $this->attachment[$this->attachmentKey]['file-extension']    = $this->fileExtension($filename);
+    $this->attachment[$this->attachmentKey]['base64-data']       = base64_encode(file_get_contents($filename));
+    $this->attachment[$this->attachmentKey]['size']              = filesize($filename);
+
+    $this->attachmentKey++;
   }
 
   #-------------------------------------------------------------------
@@ -391,35 +417,35 @@ class universalPHPmailer {
 
   #-------------------------------------------------------------------
 
-  private function header_msg_id() {
+  private function getHeaderMessageId() {
     if (empty($this->hostName)) {
       throw new Exception('Undefined property hostName');
     }
     $a = str_replace('.', '', microtime(true));
     $a = strtoupper(base_convert(dechex($a), 16, 36));
     $b = strtoupper(base_convert(bin2hex(random_bytes(8)), 16, 36));
-    $this->message_id = $a.'.'.$b.'@'.$this->hostName;
-    return 'Message-Id: <'.$this->message_id.'>';
+    $this->messageId = $a.'.'.$b.'@'.$this->hostName;
+    return 'Message-Id: <'.$this->messageId.'>';
   }
 
   #-------------------------------------------------------------------
 
-  private function header_date() {
+  private function getHeaderDate() {
     return 'Date: '.date('D, j M Y H:i:s O (T)');
   }
 
   #-------------------------------------------------------------------
 
-  private function header_from() {
-    $this->from_name = $this->sanitize_name($this->from_name);
-    return $this->encode_header('From', $this->from_name, '<'.$this->from_mail.'>');
+  private function getHeaderFrom() {
+    $this->fromName = $this->sanitizeName($this->fromName);
+    return $this->encodeHeader('From', $this->fromName, '<'.$this->fromEmail.'>');
   }
 
   #-------------------------------------------------------------------
   /**
    * Some characters in the name string would cause problems.
    */
-  private function sanitize_name($str) {
+  private function sanitizeName($str) {
     $str = preg_replace('/:+/', ' ', $str);
     $str = preg_replace('/\s+/', ' ', $str);
     return trim($str);
@@ -427,16 +453,16 @@ class universalPHPmailer {
 
   #-------------------------------------------------------------------
 
-  private function encode_header($name, $str, $append = '') {
-    if ($this->is_multibyte_string($str)) {
-      $str = $this->encode_mimestr($str);
+  private function encodeHeader($name, $str, $append = '') {
+    if ($this->isMultibyteString($str)) {
+      $str = $this->encodeMimeString($str);
     }
     return trim($name.': '.$str.' '.$append, ' :');
   }
 
   #-------------------------------------------------------------------
 
-  private function encode_mimestr($str) {
+  private function encodeMimeString($str) {
     $preferences = array(
       "input-charset"      => 'utf-8',
       "output-charset"     => 'utf-8',
@@ -445,28 +471,28 @@ class universalPHPmailer {
       "scheme"             => "B"
     );
     $enc = iconv_mime_encode('XXX', $str, $preferences);
-    return $this->endexplode(': ', $enc);
+    return $this->endExplode(': ', $enc);
   }
 
   #-------------------------------------------------------------------
 
-  private function is_multibyte_string($str) {
+  private function isMultibyteString($str) {
     return iconv_strlen($str, 'utf-8') < strlen($str);
   }
 
   #-------------------------------------------------------------------
 
-  private function set_encoding() {
-    if (!empty($this->message_encoding) && in_array($this->message_encoding, array('quoted-printable', 'base64'))) {
+  private function setEncoding() {
+    if (!empty($this->textEncoding) && in_array($this->textEncoding, array('quoted-printable', 'base64'))) {
       return;
     }
-    $this->message_encoding = 'base64';
+    $this->textEncoding = 'base64';
   }
 
   #-------------------------------------------------------------------
 
-  private function encode_body($str) {
-    if ($this->message_encoding == 'quoted-printable') {
+  private function encodeBody($str) {
+    if ($this->textEncoding == 'quoted-printable') {
       return quoted_printable_encode($str).PHP_EOL;
     }
     return chunk_split(base64_encode($str));
@@ -474,7 +500,7 @@ class universalPHPmailer {
 
   #-------------------------------------------------------------------
 
-  private function endexplode($glue, $str) {
+  private function endExplode($glue, $str) {
     if (strpos($str, $glue) === false) {
       return $str;
     }
@@ -485,7 +511,7 @@ class universalPHPmailer {
 
   #-------------------------------------------------------------------
 
-  private function file_extension($str) {
+  private function fileExtension($str) {
     if (strpos($str, '.') === false) {
       throw new Exception('File name has no extension');
     }
@@ -498,8 +524,8 @@ class universalPHPmailer {
   #-------------------------------------------------------------------
 
   private function getMimeType($ext) {
-    if (array_key_exists($ext, $this->mime_types)) {
-      return $this->mime_types[$ext][0];
+    if (array_key_exists($ext, $this->mimeType)) {
+      return $this->mimeType[$ext][0];
     }
     throw new Exception('Unknown mime type for given extension');
   }
@@ -510,7 +536,7 @@ class universalPHPmailer {
    * https://gist.github.com/nimasdj/801b0b1a50112ea6a997
    *
    */
-  private $mime_types = array(
+  private $mimeType = array(
     '3dm' => array('x-world/x-3dmf'),
     '3dmf' => array('x-world/x-3dmf'),
     '3dml' => array('text/vnd.in3d.3dml'),
