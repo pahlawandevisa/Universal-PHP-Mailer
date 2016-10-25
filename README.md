@@ -1,4 +1,4 @@
-# Universal-PHP-Mailer
+# Universal PHP Mailer
 Simple but powerful wrapper for the PHP mail() function, capable of sending anything. You can use it to send very simple mail and even some very complex. Just give it whatever content and fire it off. It configures itself. These are the possible combinations:
 
 ##Non-multipart mail:
