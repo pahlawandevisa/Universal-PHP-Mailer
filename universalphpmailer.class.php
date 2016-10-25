@@ -346,7 +346,7 @@ class universalPHPmailer {
   /**
    * Add an image to the private array inlineImage
    * @param  string
-   * @return integer ... The cid, which you need in your HTML markup.
+   * @return string ... The cid, which you need in your HTML markup.
    */
   public function addInlineImage($filename) {
     if (empty($this->hostName)) {
