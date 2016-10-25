@@ -110,7 +110,7 @@ class universalPHPmailer {
   private $attachment;
 
   /**
-   * The key of the inlineImage array
+   * The key of the attachment array
    * @var integer
    */
   private $attachmentKey;
