@@ -1,5 +1,5 @@
 # Universal-PHP-Mailer
-Simple but powerful wrapper for the PHP mail() function, capable of sending anything. You can use it to send very simple mail and even some very complex. Just give it whatever content and fire it off. It configures itself.
+Simple but powerful wrapper for the PHP mail() function, capable of sending anything. You can use it to send very simple mail and even some very complex. Just give it whatever content and fire it off. It configures itself. These are the possible combinations:
 
 ##Non-multipart Mail:
 - only one `attachment`
@@ -15,7 +15,7 @@ Simple but powerful wrapper for the PHP mail() function, capable of sending anyt
 
 
 
-### Send `text/plain`:
+How to send `text/plain`:
 ```php
 require 'universalphpmailer.class.php';
 
@@ -43,7 +43,8 @@ if (!empty($msgID)) {
 
 ```
 
-### Send `text/html`:
+
+How to send `text/html`:
 ```php
 require 'universalphpmailer.class.php';
 
@@ -70,7 +71,8 @@ if (!empty($msgID)) {
 
 ```
 
-### Send `text/html` + `inline images`:
+
+How to send `text/html` + `inline images`:
 ```php
 require 'universalphpmailer.class.php';
 
@@ -102,7 +104,8 @@ if (!empty($msgID)) {
 
 ```
 
-### Send `text/plain` + `text/html` + `inline images`:
+
+How to send `text/plain` + `text/html` + `inline images`:
 ```php
 require 'universalphpmailer.class.php';
 
@@ -141,7 +144,8 @@ if (!empty($msgID)) {
 
 ```
 
-### Send `text/plain` + `text/html` + `inline images` + `attachment`:
+
+How to send `text/plain` + `text/html` + `inline images` + `attachment`:
 ```php
 require 'universalphpmailer.class.php';
 
