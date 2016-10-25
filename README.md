@@ -1,19 +1,19 @@
 # Universal-PHP-Mailer
 Simple but powerful wrapper for the PHP mail() function, capable of sending anything. You can use it to send very simple mail and even some very complex. Just give it whatever content and fire it off. It configures itself. These are the possible combinations:
 
-##Non-multipart Mail:
+##Non-multipart mail:
 - only one `attachment`
 - only one `text/plain`
 - only one `text/html`
 
-##Multipart Mail:
+##Multipart mail:
 - two or more `attachment`
-- `text/plain` + `text/html`
-- `text/html`  + `inline images`
-- `text/plain` + `text/html` + `inline images`
-- `text/plain` + `text/html` + `inline images` + one or more `attachment`
+- `text/plain` + `text/html` + zero or more `attachment`
+- `text/html`  + `inline images` + zero or more `attachment`
+- `text/plain` + `text/html` + `inline images` + zero or more `attachment`
 
 
+---
 
 How to send `text/plain`:
 ```php
@@ -43,6 +43,7 @@ if (!empty($msgID)) {
 
 ```
 
+---
 
 How to send `text/html`:
 ```php
@@ -71,6 +72,7 @@ if (!empty($msgID)) {
 
 ```
 
+---
 
 How to send `text/html` + `inline images`:
 ```php
@@ -104,6 +106,7 @@ if (!empty($msgID)) {
 
 ```
 
+---
 
 How to send `text/plain` + `text/html` + `inline images`:
 ```php
@@ -144,6 +147,7 @@ if (!empty($msgID)) {
 
 ```
 
+---
 
 How to send `text/plain` + `text/html` + `inline images` + `attachment`:
 ```php
