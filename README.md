@@ -205,16 +205,16 @@ $mailor->hostName  = 'zarscwfo';
 
 $recipientArr = array(
   0 => array(
-    'name'   => 'John Doe',
-    'enamil' => 'j.doe@udwiwobg',
+            'name'  => 'John Doe',
+            'email' => 'j.doe@udwiwobg',
   ),
   1 => array(
-    'name'   => 'Jane Wise',
-    'enamil' => 'j.wise@udwiwobg',
+            'name'  => 'Jane Wise',
+            'email' => 'j.wise@udwiwobg',
   ),
   2 => array(
-    'name'   => 'Robert Simth',
-    'enamil' => 'robert.smith@udwiwobg',
+            'name'  => 'Robert Simth',
+            'email' => 'robert.smith@udwiwobg',
   ),
 );
 
