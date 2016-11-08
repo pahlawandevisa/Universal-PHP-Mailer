@@ -189,3 +189,57 @@ if (!empty($msgID)) {
 }
 
 ```
+
+---
+
+How to send `text/html` + `inline images` in a loop (multiple recipients):
+```php
+require 'universalphpmailer.class.php';
+
+$mailor = new universalPHPmailer;
+
+$mailor->subject   = 'Weekly best deal newsletter';
+$mailor->fromName  = 'Mail Robot';
+$mailor->fromEmail = 'james.jones@udwiwobg';
+$mailor->hostName  = 'zarscwfo';
+
+$recipientArr = array(
+  0 => array(
+    'name'   => 'John Doe',
+    'enamil' => 'j.doe@udwiwobg',
+  ),
+  1 => array(
+    'name'   => 'Jane Wise',
+    'enamil' => 'j.wise@udwiwobg',
+  ),
+  2 => array(
+    'name'   => 'Robert Simth',
+    'enamil' => 'robert.mith@udwiwobg',
+  ),
+);
+
+$cidA = $mailor->addInlineImage('/some/path/imageA.jpg'); # This gives us the CID
+$cidB = $mailor->addInlineImage('/some/path/imageB.png');
+
+# The loop
+foreach ($recipientArr as $receipient) {
+
+  $mailor->toName    = $receipient['name'];
+  $mailor->toEmail   = $receipient['email'];
+
+  $mailor->textHtml  = '<body>
+    <p>Hi '.$receipient['name'].',</p>
+    <p>You are receiving this newsletter because you have subscribed.</p>
+    <p>Best regards,<br>'.$mailor->fromName.'</p>
+    <div><img src="cid:'.$cidA.'" width="200" height="100" alt="Image A"></div>
+    <div><img src="cid:'.$cidB.'" width="200" height="100" alt="Image B"></div>
+  </body>';
+
+  $msgID = $mailor->sendMessage();
+
+  if (!empty($msgID)) {
+    echo 'Successfully sent message ID ..... '. $msgID . PHP_EOL;
+  }
+}
+
+```
