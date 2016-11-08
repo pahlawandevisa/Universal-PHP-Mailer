@@ -87,7 +87,7 @@ $mailor->fromName  = 'James Jones';
 $mailor->fromEmail = 'james.jones@udwiwobg';
 $mailor->hostName  = 'zarscwfo';
 
-$cidA = $mailor->addInlineImage('/some/path/imageA.jpg'); # This gives us the CID
+$cidA = $mailor->addInlineImage('/some/path/imageA.jpg'); # This gives us the content ID string
 $cidB = $mailor->addInlineImage('/some/path/imageB.png');
 
 $mailor->textHtml  = '<body>
@@ -121,7 +121,7 @@ $mailor->fromName  = 'James Jones';
 $mailor->fromEmail = 'james.jones@udwiwobg';
 $mailor->hostName  = 'zarscwfo';
 
-$cidA = $mailor->addInlineImage('/some/path/imageA.jpg'); # This gives us the CID
+$cidA = $mailor->addInlineImage('/some/path/imageA.jpg'); # This gives us the content ID string
 $cidB = $mailor->addInlineImage('/some/path/imageB.png');
 
 $mailor->textPlain = 'Hi John,
@@ -162,7 +162,7 @@ $mailor->fromName  = 'James Jones';
 $mailor->fromEmail = 'james.jones@udwiwobg';
 $mailor->hostName  = 'zarscwfo';
 
-$cidA = $mailor->addInlineImage('/some/path/imageA.jpg'); # This gives us the CID
+$cidA = $mailor->addInlineImage('/some/path/imageA.jpg'); # This gives us the content ID string
 $cidB = $mailor->addInlineImage('/some/path/imageB.png');
 
 $mailor->addAttachment('/some/path/contract.pdf');
@@ -214,21 +214,21 @@ $recipientArr = array(
   ),
   2 => array(
     'name'   => 'Robert Simth',
-    'enamil' => 'robert.mith@udwiwobg',
+    'enamil' => 'robert.smith@udwiwobg',
   ),
 );
 
-$cidA = $mailor->addInlineImage('/some/path/imageA.jpg'); # This gives us the CID
+$cidA = $mailor->addInlineImage('/some/path/imageA.jpg'); # This gives us the content ID string
 $cidB = $mailor->addInlineImage('/some/path/imageB.png');
 
 # The loop
-foreach ($recipientArr as $receipient) {
+foreach ($recipientArr as $recipient) {
 
-  $mailor->toName    = $receipient['name'];
-  $mailor->toEmail   = $receipient['email'];
+  $mailor->toName    = $recipient['name'];
+  $mailor->toEmail   = $recipient['email'];
 
   $mailor->textHtml  = '<body>
-    <p>Hi '.$receipient['name'].',</p>
+    <p>Hi '.$recipient['name'].',</p>
     <p>You are receiving this newsletter because you have subscribed.</p>
     <p>Best regards,<br>'.$mailor->fromName.'</p>
     <div><img src="cid:'.$cidA.'" width="200" height="100" alt="Image A"></div>
@@ -238,7 +238,7 @@ foreach ($recipientArr as $receipient) {
   $msgID = $mailor->sendMessage();
 
   if (!empty($msgID)) {
-    echo 'Successfully sent message ID ..... '. $msgID . PHP_EOL;
+    echo 'Successfully sent message ID ..... '. $msgID .' .... To: '. $recipient['email'] . PHP_EOL;
   }
 }
 
