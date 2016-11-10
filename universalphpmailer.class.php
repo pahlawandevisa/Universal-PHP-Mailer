@@ -3,7 +3,7 @@
 /**
  * Universal PHP Mailer
  *
- * @version    0.5.3 (2016-10-24 08:27:00 GMT)
+ * @version    0.5.4 (2016-11-10 00:17:00 GMT)
  * @author     Peter Kahl <peter.kahl@colossalmind.com>
  * @copyright  2016 Peter Kahl
  * @license    Apache License, Version 2.0
@@ -29,7 +29,7 @@ class universalPHPmailer {
    * Version
    * @var string
    */
-  private $version = '0.5.3';
+  private $version = '0.5.4';
 
   public $toName;
 
@@ -429,7 +429,14 @@ class universalPHPmailer {
   }
 
   #-------------------------------------------------------------------
-
+  /**
+   * RFC5322
+   * https://tools.ietf.org/html/rfc5322.html
+   * Note:
+   *     Time zone in braces is not per RFC5322, but
+   *     because it's in braces, it is considered
+   *     a comment, which is legal.
+   */
   private function getHeaderDate() {
     return 'Date: '.date('D, j M Y H:i:s O (T)');
   }
@@ -443,12 +450,19 @@ class universalPHPmailer {
 
   #-------------------------------------------------------------------
   /**
-   * Some characters in the name string would cause problems.
+   * RFC5322
+   * https://tools.ietf.org/html/rfc5322.html
    */
   private function sanitizeName($str) {
-    $str = preg_replace('/:+/', ' ', $str);
-    $str = preg_replace('/\s+/', ' ', $str);
-    return trim($str);
+    $str = trim($str, '"');
+    if (strpos($str, '"')) {
+      $str = preg_replace('/"/', '\"', $str);
+      return '"'.$str.'"';
+    }
+    if (strpos($str, '.') !== false || strpos($str, ':') !== false || strpos($str, ';') !== false) {
+      $str = '"'.$str.'"';
+    }
+    return $str;
   }
 
   #-------------------------------------------------------------------
