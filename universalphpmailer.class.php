@@ -3,7 +3,7 @@
 /**
  * Universal PHP Mailer
  *
- * @version    0.5.5 (2016-11-11 02:15:00 GMT)
+ * @version    0.5.6 (2016-11-11 03:47:00 GMT)
  * @author     Peter Kahl <peter.kahl@colossalmind.com>
  * @copyright  2016 Peter Kahl
  * @license    Apache License, Version 2.0
@@ -29,7 +29,7 @@ class universalPHPmailer {
    * Version
    * @var string
    */
-  private $version = '0.5.5';
+  private $version = '0.5.6';
 
   public $toName;
 
@@ -131,7 +131,7 @@ class universalPHPmailer {
     $this->rbstr = false;
     $this->setEncoding();
 
-    $to        = $this->endExplode('o: ', $this->encodeHeader('To', $this->sanitizeName($this->toName), '<'.$this->toEmail.'>'));
+    $to        = $this->endExplode('o: ', $this->encodeHeader('To', $this->toName, '<'.$this->toEmail.'>'));
     $subject   = $this->endExplode('ubject: ', $this->encodeHeader('Subject', $this->subject));
     $body      = '';
     $headers   = array();
@@ -444,7 +444,6 @@ class universalPHPmailer {
   #-------------------------------------------------------------------
 
   private function getHeaderFrom() {
-    $this->fromName = $this->sanitizeName($this->fromName);
     return $this->encodeHeader('From', $this->fromName, '<'.$this->fromEmail.'>');
   }
 
@@ -455,10 +454,10 @@ class universalPHPmailer {
    */
   private function sanitizeName($str) {
     $str = trim(trim($str, '"'), "'");
-    if (preg_match('/["\'"]/', $str)) {
-      return '"'.add_slashes($str).'"';
+    if (preg_match('/"/', $str)) {
+      return '"'.preg_replace('/"/', '\"', $str).'"';
     }
-    elseif (preg_match('/[\.,:;@\(\)\[\]<>\\]/', $str)) {
+    elseif (preg_match('~[,:;@\(\)\[\]<>\\\.]+~', $str)) {
       return '"'.$str.'"';
     }
     return $str;
@@ -469,6 +468,9 @@ class universalPHPmailer {
   private function encodeHeader($name, $str, $append = '') {
     if ($this->isMultibyteString($str)) {
       $str = $this->encodeMimeString($str);
+    }
+    elseif ($name != 'Subject') {
+      $str = $this->sanitizeName($str);
     }
     return trim($name.': '.$str.' '.$append, ' :');
   }
