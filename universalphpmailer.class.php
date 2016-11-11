@@ -141,7 +141,7 @@ class universalPHPmailer {
     $headers[] = $this->getHeaderFrom();
     if (!empty($this->customHeaders) && is_array($this->customHeaders)) {
       foreach ($this->customHeaders as $key => $val) {
-        $headers[] = $val;
+        $headers[] = $key.': '.$val;
       }
     }
     $headers[] = 'X-Mailer: universalPHPmailer/'.$this->version.' (https://github.com/peterkahl/Universal-PHP-Mailer)';
