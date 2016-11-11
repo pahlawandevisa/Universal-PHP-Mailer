@@ -3,7 +3,7 @@
 /**
  * Universal PHP Mailer
  *
- * @version    0.5.7 (2016-11-11 04:27:00 GMT)
+ * @version    0.5.8 (2016-11-11 05:03:00 GMT)
  * @author     Peter Kahl <peter.kahl@colossalmind.com>
  * @copyright  2016 Peter Kahl
  * @license    Apache License, Version 2.0
@@ -29,7 +29,7 @@ class universalPHPmailer {
    * Version
    * @var string
    */
-  private $version = '0.5.7';
+  private $version = '0.5.8';
 
   public $toName;
 
@@ -68,6 +68,7 @@ class universalPHPmailer {
    *                'References'  => '<MESSAGE.ID@domain.tld>',
    *                'Bcc'         => 'recipient@somewhere',
    *                )
+   * Header value must be ASCII characters.
    */
   public $customHeaders;
 
@@ -140,7 +141,7 @@ class universalPHPmailer {
     $headers[] = $this->getHeaderFrom();
     if (!empty($this->customHeaders) && is_array($this->customHeaders)) {
       foreach ($this->customHeaders as $key => $val) {
-        $headers[] = $this->encodeHeader($key, $val);
+        $headers[] = $val;
       }
     }
     $headers[] = 'X-Mailer: universalPHPmailer/'.$this->version.' (https://github.com/peterkahl/Universal-PHP-Mailer)';
