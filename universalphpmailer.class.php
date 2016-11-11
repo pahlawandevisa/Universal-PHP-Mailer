@@ -3,7 +3,7 @@
 /**
  * Universal PHP Mailer
  *
- * @version    0.5.4 (2016-11-10 00:17:00 GMT)
+ * @version    0.5.5 (2016-11-11 02:15:00 GMT)
  * @author     Peter Kahl <peter.kahl@colossalmind.com>
  * @copyright  2016 Peter Kahl
  * @license    Apache License, Version 2.0
@@ -29,7 +29,7 @@ class universalPHPmailer {
    * Version
    * @var string
    */
-  private $version = '0.5.4';
+  private $version = '0.5.5';
 
   public $toName;
 
@@ -425,7 +425,7 @@ class universalPHPmailer {
     $a = strtoupper(base_convert(dechex($a), 16, 36));
     $b = strtoupper(base_convert(bin2hex(random_bytes(8)), 16, 36));
     $this->messageId = $a.'.'.$b.'@'.$this->hostName;
-    return 'Message-Id: <'.$this->messageId.'>';
+    return 'Message-ID: <'.$this->messageId.'>';
   }
 
   #-------------------------------------------------------------------
@@ -454,13 +454,12 @@ class universalPHPmailer {
    * https://tools.ietf.org/html/rfc5322.html
    */
   private function sanitizeName($str) {
-    $str = trim($str, '"');
-    if (strpos($str, '"')) {
-      $str = preg_replace('/"/', '\"', $str);
-      return '"'.$str.'"';
+    $str = trim(trim($str, '"'), "'");
+    if (preg_match('/["\'"]/', $str)) {
+      return '"'.add_slashes($str).'"';
     }
-    if (strpos($str, '.') !== false || strpos($str, ':') !== false || strpos($str, ';') !== false) {
-      $str = '"'.$str.'"';
+    elseif (preg_match('/[\.,:;@\(\)\[\]<>\\]/', $str)) {
+      return '"'.$str.'"';
     }
     return $str;
   }
