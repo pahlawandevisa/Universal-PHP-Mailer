@@ -3,7 +3,7 @@
 /**
  * Universal PHP Mailer
  *
- * @version    0.5.8 (2016-11-11 05:03:00 GMT)
+ * @version    0.5.9 (2016-11-11 08:41:00 GMT)
  * @author     Peter Kahl <peter.kahl@colossalmind.com>
  * @copyright  2016 Peter Kahl
  * @license    Apache License, Version 2.0
@@ -29,7 +29,7 @@ class universalPHPmailer {
    * Version
    * @var string
    */
-  private $version = '0.5.8';
+  private $version = '0.5.9';
 
   public $toName;
 
@@ -68,7 +68,7 @@ class universalPHPmailer {
    *                'References'  => '<MESSAGE.ID@domain.tld>',
    *                'Bcc'         => 'recipient@somewhere',
    *                )
-   * Header value must be ASCII characters.
+   * Header value will be encoded, if mutlibyte.
    */
   public $customHeaders;
 
@@ -132,7 +132,7 @@ class universalPHPmailer {
     $this->rbstr = false;
     $this->setEncoding();
 
-    $to        = $this->endExplode('o: ', $this->encodeHeader('To', $this->toName, '<'.$this->toEmail.'>'));
+    $to        = $this->endExplode('o: ', $this->encodeNameHeader('To', $this->toName, $this->toEmail));
     $subject   = $this->endExplode('ubject: ', $this->encodeHeader('Subject', $this->subject));
     $body      = '';
     $headers   = array();
@@ -141,7 +141,7 @@ class universalPHPmailer {
     $headers[] = $this->getHeaderFrom();
     if (!empty($this->customHeaders) && is_array($this->customHeaders)) {
       foreach ($this->customHeaders as $key => $val) {
-        $headers[] = $key.': '.$val;
+        $headers[] = $this->encodeHeader($key, $val);
       }
     }
     $headers[] = 'X-Mailer: universalPHPmailer/'.$this->version.' (https://github.com/peterkahl/Universal-PHP-Mailer)';
@@ -445,35 +445,32 @@ class universalPHPmailer {
   #-------------------------------------------------------------------
 
   private function getHeaderFrom() {
-    return $this->encodeHeader('From', $this->fromName, '<'.$this->fromEmail.'>');
+    return $this->encodeNameHeader('From', $this->fromName, $this->fromEmail);
   }
 
   #-------------------------------------------------------------------
+
   /**
-   * RFC5322
-   * https://tools.ietf.org/html/rfc5322.html
+   * Per RFC5322, headers To:, From:, ... should be like this:
+   *
+   *   To: John Public <johnpublic@blah.something>
+   *   To: "John Q. Public" <johnqpublic@blah.blah>
+   *   To: "John \"Big Cahuna\" Smith" <john@bla.another>
+   *
+   * This method eliminates any complication by encoding the whole
+   * string. Problem solved!
    */
-  private function sanitizeName($str) {
-    $str = trim(trim($str, '"'), "'");
-    if (preg_match('/"/', $str)) {
-      return '"'.preg_replace('/"/', '\"', $str).'"';
-    }
-    elseif (preg_match('~[,:;@\(\)\[\]<>\\\.]+~', $str)) {
-      return '"'.$str.'"';
-    }
-    return $str;
+  private function encodeNameHeader($hdr, $name, $email) {
+    return $hdr.': '.$this->encodeMimeString($name).' <'.$email.'>';
   }
 
   #-------------------------------------------------------------------
 
-  private function encodeHeader($name, $str, $append = '') {
+  private function encodeHeader($hdr, $str) {
     if ($this->isMultibyteString($str)) {
       $str = $this->encodeMimeString($str);
     }
-    elseif ($name != 'Subject' && !empty($append)) {
-      $str = $this->sanitizeName($str);
-    }
-    return trim($name.': '.$str.' '.$append, ' :');
+    return $hdr.': '.$str;
   }
 
   #-------------------------------------------------------------------
