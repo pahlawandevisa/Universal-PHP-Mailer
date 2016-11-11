@@ -3,7 +3,7 @@
 /**
  * Universal PHP Mailer
  *
- * @version    0.5.6 (2016-11-11 03:47:00 GMT)
+ * @version    0.5.7 (2016-11-11 04:27:00 GMT)
  * @author     Peter Kahl <peter.kahl@colossalmind.com>
  * @copyright  2016 Peter Kahl
  * @license    Apache License, Version 2.0
@@ -29,7 +29,7 @@ class universalPHPmailer {
    * Version
    * @var string
    */
-  private $version = '0.5.6';
+  private $version = '0.5.7';
 
   public $toName;
 
@@ -469,7 +469,7 @@ class universalPHPmailer {
     if ($this->isMultibyteString($str)) {
       $str = $this->encodeMimeString($str);
     }
-    elseif ($name != 'Subject') {
+    elseif ($name != 'Subject' && !empty($append)) {
       $str = $this->sanitizeName($str);
     }
     return trim($name.': '.$str.' '.$append, ' :');
