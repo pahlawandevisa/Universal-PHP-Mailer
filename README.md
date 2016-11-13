@@ -199,25 +199,26 @@ require 'universalphpmailer.class.php';
 $mailor = new universalPHPmailer;
 
 $mailor->subject   = 'Weekly best deal newsletter';
-$mailor->fromName  = 'Mail Robot';
+$mailor->fromName  = '"Mail Robot (don\'t reply)"'; # Display name per RFC5322
 $mailor->fromEmail = 'james.jones@udwiwobg';
 $mailor->hostName  = 'zarscwfo';
 
 $recipientArr = array(
   0 => array(
-            'name'  => 'John Doe',
+            'name'  => 'John Doe', # Display name per RFC5322
             'email' => 'j.doe@udwiwobg',
   ),
   1 => array(
-            'name'  => 'Jane Wise',
+            'name'  => '"Jane V. Wise" (smart cookie)', # Display name and comment per RFC5322
             'email' => 'j.wise@udwiwobg',
   ),
   2 => array(
-            'name'  => 'Robert Simth',
+            'name'  => '"Robert W. Simth"', # Display name per RFC5322
             'email' => 'robert.smith@udwiwobg',
   ),
 );
 
+# These 2 images are same for all recipients
 $cidA = $mailor->addInlineImage('/some/path/imageA.jpg'); # This gives us the content ID string
 $cidB = $mailor->addInlineImage('/some/path/imageB.png');
 
