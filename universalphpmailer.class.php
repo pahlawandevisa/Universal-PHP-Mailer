@@ -3,7 +3,7 @@
 /**
  * Universal PHP Mailer
  *
- * @version    0.5.9 (2016-11-11 08:41:00 GMT)
+ * @version    0.5.10 (2016-11-13 07:06:00 GMT)
  * @author     Peter Kahl <peter.kahl@colossalmind.com>
  * @copyright  2016 Peter Kahl
  * @license    Apache License, Version 2.0
@@ -29,16 +29,38 @@ class universalPHPmailer {
    * Version
    * @var string
    */
-  private $version = '0.5.9';
+  private $version = '0.5.10';
 
+  /**
+   * Recipeint's display name
+   * Must be formatted per RFC5322 !!!
+   * @var string
+   */
   public $toName;
 
+  /**
+   * Recipeint's email address
+   * @var string
+   */
   public $toEmail;
 
+  /**
+   * Sender's display name
+   * Must be formatted per RFC5322 !!!
+   * @var string
+   */
   public $fromName;
 
+  /**
+   * Sender's email address
+   * @var string
+   */
   public $fromEmail;
 
+  /**
+   * Return Path email address (optional)
+   * @var string
+   */
   public $returnPath;
 
   public $subject;
@@ -48,12 +70,14 @@ class universalPHPmailer {
   public $textHtml;
 
   /**
+   * How you want the text encoded?
    * @var string
    * Valid values are 'base64' OR 'quoted-printable'
    */
   public $textEncoding;
 
   /**
+   * Language of text (optional)
    * If set, will create header 'Content-Language: en-gb'
    * @var string (e.g. 'en-gb')
    */
@@ -67,8 +91,9 @@ class universalPHPmailer {
    *                'In-Reply-To' => '<MESSAGE.ID@domain.tld>',
    *                'References'  => '<MESSAGE.ID@domain.tld>',
    *                'Bcc'         => 'recipient@somewhere',
+   *                'Cc'          => '"Jane Q. Public" (my superior) <jane.p@string.test>'
    *                )
-   * Header value will be encoded, if mutlibyte.
+   * This class will econde header value if multibyte.
    */
   public $customHeaders;
 
@@ -451,17 +476,21 @@ class universalPHPmailer {
   #-------------------------------------------------------------------
 
   /**
-   * Per RFC5322, headers To:, From:, ... should be like this:
+   * Per RFC5322, headers with email address To:, From:, ...
+   * should be like this:
    *
    *   To: John Public <johnpublic@blah.something>
    *   To: "John Q. Public" <johnqpublic@blah.blah>
    *   To: "John \"Big Cahuna\" Smith" <john@bla.another>
+   *   To: "John Doe" (the common guy) <jon.doe@sample.test>
    *
-   * This method eliminates any complication by encoding the whole
-   * string. Problem solved!
+   * It is your responsibility to format display name per RFC5322 !!
    */
   private function encodeNameHeader($hdr, $name, $email) {
-    return $hdr.': '.$this->encodeMimeString($name).' <'.$email.'>';
+    if ($this->isMultibyteString($name)) {
+      $name = $this->encodeMimeString($name);
+    }
+    return $hdr.': '.$name.' <'.$email.'>';
   }
 
   #-------------------------------------------------------------------
