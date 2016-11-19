@@ -3,7 +3,7 @@
 /**
  * Universal PHP Mailer
  *
- * @version    0.5.10 (2016-11-13 07:06:00 GMT)
+ * @version    0.5.11 (2016-11-19 01:42:00 GMT)
  * @author     Peter Kahl <peter.kahl@colossalmind.com>
  * @copyright  2016 Peter Kahl
  * @license    Apache License, Version 2.0
@@ -29,7 +29,7 @@ class universalPHPmailer {
    * Version
    * @var string
    */
-  private $version = '0.5.10';
+  private $version = '0.5.11';
 
   /**
    * Recipeint's display name
@@ -487,17 +487,45 @@ class universalPHPmailer {
    * It is your responsibility to format display name per RFC5322 !!
    */
   private function encodeNameHeader($hdr, $name, $email) {
-    if ($this->isMultibyteString($name)) {
-      $name = $this->encodeMimeString($name);
-    }
-    return $hdr.': '.$name.' <'.$email.'>';
+    return $this->encodeHeader($hdr, $name).' <'.$email.'>';
   }
 
   #-------------------------------------------------------------------
 
   private function encodeHeader($hdr, $str) {
     if ($this->isMultibyteString($str)) {
-      $str = $this->encodeMimeString($str);
+      $chars = preg_split('//u', $str, -1, PREG_SPLIT_NO_EMPTY); # array
+      $new = array();
+      $kn = 0;
+      foreach ($chars as $kc => $ch) {
+        if ($kc == 0) {
+          # First character
+          $mb = $this->isMultibyteString($ch);
+          $new[$kn] = $ch;
+        }
+        else {
+          # Subsequent character (2,3,...)
+          $mbPrev = $mb;
+          $mb = $this->isMultibyteString($ch);
+          if ($mbPrev == $mb) {
+            $new[$kn] .= $ch; # Same type as previous
+          }
+          else {
+            $kn++; # Type changed
+            $new[$kn] = $ch;
+          }
+        }
+      }
+      #----
+      $str = '';
+      foreach ($new as $segm) {
+        if ($this->isMultibyteString($segm)) {
+          $str .= $this->encodeMimeString($segm);
+        }
+        else {
+          $str .= $segm;
+        }
+      }
     }
     return $hdr.': '.$str;
   }
