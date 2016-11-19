@@ -3,7 +3,7 @@
 /**
  * Universal PHP Mailer
  *
- * @version    0.5.11 (2016-11-19 01:42:00 GMT)
+ * @version    0.5.12 (2016-11-19 05:06:00 GMT)
  * @author     Peter Kahl <peter.kahl@colossalmind.com>
  * @copyright  2016 Peter Kahl
  * @license    Apache License, Version 2.0
@@ -29,7 +29,7 @@ class universalPHPmailer {
    * Version
    * @var string
    */
-  private $version = '0.5.11';
+  private $version = '0.5.12';
 
   /**
    * Recipeint's display name
@@ -141,6 +141,14 @@ class universalPHPmailer {
    */
   private $attachmentKey;
 
+  /**
+   * Line length limits per RFC5322
+   * https://tools.ietf.org/html/rfc5322.html#section-2.1.1
+   * @var integer
+   */
+  const LINE_LEN_SINGLE = 78;
+  const LINE_LEN_TOTAL  = 998;
+
   #-------------------------------------------------------------------
 
   public function __construct() {
@@ -169,7 +177,7 @@ class universalPHPmailer {
         $headers[] = $this->encodeHeader($key, $val);
       }
     }
-    $headers[] = 'X-Mailer: universalPHPmailer/'.$this->version.' (https://github.com/peterkahl/Universal-PHP-Mailer)';
+    $headers[] = $this->foldLine('X-Mailer: universalPHPmailer/'.$this->version.' (https://github.com/peterkahl/Universal-PHP-Mailer)');
     $headers[] = 'MIME-Version: 1.0';
 
     $multiTypes = array();
@@ -487,12 +495,12 @@ class universalPHPmailer {
    * It is your responsibility to format display name per RFC5322 !!
    */
   private function encodeNameHeader($hdr, $name, $email) {
-    return $this->encodeHeader($hdr, $name).' <'.$email.'>';
+    return $this->foldLine($this->encodeHeader($hdr, $name, false).' <'.$email.'>');
   }
 
   #-------------------------------------------------------------------
 
-  private function encodeHeader($hdr, $str) {
+  private function encodeHeader($hdr, $str, $fold = true) {
     if ($this->isMultibyteString($str)) {
       $chars = preg_split('//u', $str, -1, PREG_SPLIT_NO_EMPTY); # array
       $new = array();
@@ -527,6 +535,9 @@ class universalPHPmailer {
         }
       }
     }
+    if ($fold) {
+      return $this->foldLine($hdr.': '.$str);
+    }
     return $hdr.': '.$str;
   }
 
@@ -548,6 +559,22 @@ class universalPHPmailer {
 
   private function isMultibyteString($str) {
     return iconv_strlen($str, 'utf-8') < strlen($str);
+  }
+
+  #-------------------------------------------------------------------
+
+  /**
+   * Folding of excessively long lines, RFC5322
+   * https://tools.ietf.org/html/rfc5322.html#section-3.2.2
+   */
+  private function foldLine($str) {
+    if (strlen($str) > self::LINE_LEN_TOTAL) {
+      throw new Exception('Line length exceeds RFC5322 limit of '.self::LINE_LEN_TOTAL);
+    }
+    if (strlen($str) < self::LINE_LEN_SINGLE) {
+      return $str;
+    }
+    return wordwrap($str, self::LINE_LEN_SINGLE-2, PHP_EOL.' ');
   }
 
   #-------------------------------------------------------------------
