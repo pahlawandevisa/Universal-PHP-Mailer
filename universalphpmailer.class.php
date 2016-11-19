@@ -3,7 +3,7 @@
 /**
  * Universal PHP Mailer
  *
- * @version    0.5.12 (2016-11-19 05:06:00 GMT)
+ * @version    0.5.13 (2016-11-19 05:13:00 GMT)
  * @author     Peter Kahl <peter.kahl@colossalmind.com>
  * @copyright  2016 Peter Kahl
  * @license    Apache License, Version 2.0
@@ -29,7 +29,7 @@ class universalPHPmailer {
    * Version
    * @var string
    */
-  private $version = '0.5.12';
+  private $version = '0.5.13';
 
   /**
    * Recipeint's display name
@@ -165,8 +165,8 @@ class universalPHPmailer {
     $this->rbstr = false;
     $this->setEncoding();
 
-    $to        = $this->endExplode('o: ', $this->encodeNameHeader('To', $this->toName, $this->toEmail));
-    $subject   = $this->endExplode('ubject: ', $this->encodeHeader('Subject', $this->subject));
+    $to        = preg_replace('/^To:\s/', '', $this->encodeNameHeader('To', $this->toName, $this->toEmail));
+    $subject   = preg_replace('/^Subject:\s/', '', $this->encodeHeader('Subject', $this->subject));
     $body      = '';
     $headers   = array();
     $headers[] = $this->getHeaderDate();
@@ -552,7 +552,7 @@ class universalPHPmailer {
       "scheme"             => "B"
     );
     $enc = iconv_mime_encode('XXX', $str, $preferences);
-    return $this->endExplode(': ', $enc);
+    return preg_replace('/^XXX:\s/', '', $enc);
   }
 
   #-------------------------------------------------------------------
