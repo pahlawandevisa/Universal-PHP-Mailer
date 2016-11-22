@@ -3,7 +3,7 @@
 /**
  * Universal PHP Mailer
  *
- * @version    0.5.13 (2016-11-19 05:13:00 GMT)
+ * @version    0.5.14 (2016-11-22 09:43:00 GMT)
  * @author     Peter Kahl <peter.kahl@colossalmind.com>
  * @copyright  2016 Peter Kahl
  * @license    Apache License, Version 2.0
@@ -29,11 +29,10 @@ class universalPHPmailer {
    * Version
    * @var string
    */
-  private $version = '0.5.13';
+  const VERSION = '0.5.14';
 
   /**
    * Recipeint's display name
-   * Must be formatted per RFC5322 !!!
    * @var string
    */
   public $toName;
@@ -46,7 +45,6 @@ class universalPHPmailer {
 
   /**
    * Sender's display name
-   * Must be formatted per RFC5322 !!!
    * @var string
    */
   public $fromName;
@@ -87,22 +85,31 @@ class universalPHPmailer {
    * Specify custom headers, if any
    * @var array
    * Required structure:
-   *           array(
-   *                'In-Reply-To' => '<MESSAGE.ID@domain.tld>',
-   *                'References'  => '<MESSAGE.ID@domain.tld>',
-   *                'Bcc'         => 'recipient@somewhere',
-   *                'Cc'          => '"Jane Q. Public" (my superior) <jane.p@string.test>'
-   *                )
-   * This class will econde header value if multibyte.
+   *       array(
+   *            'In-Reply-To' => '<MESSAGE.ID@domain.tld>',
+   *            'References'  => '<MESSAGE.ID@domain.tld>',
+   *            'Bcc'         => 'recipient@somewhere',
+   *            'Cc'          => '"Jane Q. Public" (my superior) <jane.p@string.test>',
+   *            )
+   * This class will econde header value per RFC2047, if multibyte.
+   * If you define email address containing header with a display name, make
+   * sure you format the display name per RFC5322, or just use the method
+   * 'formatDisplayName' for doing so.
    */
   public $customHeaders;
 
   /**
-   * Hostname for use in message ID and for Content-ID
+   * Hostname for use in message ID and for Content-ID.
+   * This could be any value, but it is recommended to use a valid hostname.
    * @var string
    */
   public $hostName;
 
+  /**
+   * Message ID
+   * Automatically generated.
+   * @var string
+   */
   private $messageId;
 
   /**
@@ -177,7 +184,7 @@ class universalPHPmailer {
         $headers[] = $this->encodeHeader($key, $val);
       }
     }
-    $headers[] = $this->foldLine('X-Mailer: universalPHPmailer/'.$this->version.' (https://github.com/peterkahl/Universal-PHP-Mailer)');
+    $headers[] = $this->foldLine('X-Mailer: universalPHPmailer/'.self::VERSION.' (https://github.com/peterkahl/Universal-PHP-Mailer)');
     $headers[] = 'MIME-Version: 1.0';
 
     $multiTypes = array();
@@ -463,6 +470,7 @@ class universalPHPmailer {
   }
 
   #-------------------------------------------------------------------
+
   /**
    * RFC5322
    * https://tools.ietf.org/html/rfc5322.html
@@ -484,6 +492,8 @@ class universalPHPmailer {
   #-------------------------------------------------------------------
 
   /**
+   * Formats display name in headers per RFC5322.
+   * NOTE: Use this method if you want to avoid some unpleasant surprises.
    * Per RFC5322, headers with email address To:, From:, ...
    * should be like this:
    *
@@ -492,7 +502,30 @@ class universalPHPmailer {
    *   To: "John \"Big Cahuna\" Smith" <john@bla.another>
    *   To: "John Doe" (the common guy) <jon.doe@sample.test>
    *
-   * It is your responsibility to format display name per RFC5322 !!
+   * name    @var string ..... unquoted and unescaped display name
+   * comment @var string ..... without braces; optional
+   */
+  public function formatDisplayName($name, $comment = '') {
+    if (preg_match('~[,;:\(\)\[\]\.\\<>@"]~', $name)) {
+      $name = preg_replace('/"/', '\"', $name);
+      if (!empty($comment)) {
+        return '"'.$name.'" ('.$comment.')';
+      }
+      return '"'.$name.'"';
+    }
+    #----
+    if (!empty($comment)) {
+      return '"'.$name.'" ('.$comment.')';
+    }
+    return $name;
+  }
+
+  #-------------------------------------------------------------------
+
+  /**
+   * Make sure that display name ($name) is formated per RFC5322.
+   * You may want to use the method 'formatDisplayName' to assure
+   * compliance with RFC5322.
    */
   private function encodeNameHeader($hdr, $name, $email) {
     return $this->foldLine($this->encodeHeader($hdr, $name, false).' <'.$email.'>');
@@ -564,8 +597,12 @@ class universalPHPmailer {
   #-------------------------------------------------------------------
 
   /**
-   * Folding of excessively long lines, RFC5322
+   * Folding of excessively long header lines, RFC5322
    * https://tools.ietf.org/html/rfc5322.html#section-3.2.2
+   * IMPORTANT:
+   *     Headers with FWS (folding white space) may cause
+   *     DKIM validation failures. In such case, you may
+   *     need to set DKIM Canonicalization to 'relaxed'.
    */
   private function foldLine($str) {
     if (strlen($str) > self::LINE_LEN_TOTAL) {
