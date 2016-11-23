@@ -3,7 +3,7 @@
 /**
  * Universal PHP Mailer
  *
- * @version    0.5.14 (2016-11-22 09:43:00 GMT)
+ * @version    0.5.15 (2016-11-23 03:07:00 GMT)
  * @author     Peter Kahl <peter.kahl@colossalmind.com>
  * @copyright  2016 Peter Kahl
  * @license    Apache License, Version 2.0
@@ -29,7 +29,7 @@ class universalPHPmailer {
    * Version
    * @var string
    */
-  const VERSION = '0.5.14';
+  const VERSION = '0.5.15';
 
   /**
    * Recipeint's display name
@@ -475,9 +475,8 @@ class universalPHPmailer {
    * RFC5322
    * https://tools.ietf.org/html/rfc5322.html
    * Note:
-   *     Time zone in braces is not per RFC5322, but
-   *     because it's in braces, it is considered
-   *     a comment, which is legal.
+   *     Time zone abbreviation in braces is considered
+   *     a comment. This is compliant with RFC5322.
    */
   private function getHeaderDate() {
     return 'Date: '.date('D, j M Y H:i:s O (T)');
@@ -534,6 +533,7 @@ class universalPHPmailer {
   #-------------------------------------------------------------------
 
   private function encodeHeader($hdr, $str, $fold = true) {
+    $str = preg_replace('/\s+/', ' ', $str);
     if ($this->isMultibyteString($str)) {
       $chars = preg_split('//u', $str, -1, PREG_SPLIT_NO_EMPTY); # array
       $new = array();

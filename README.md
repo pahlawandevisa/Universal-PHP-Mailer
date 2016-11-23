@@ -244,3 +244,33 @@ foreach ($recipientArr as $recipient) {
 }
 
 ```
+
+---
+
+How to correctly quote and escape display name in headers per RFC5322. This will avoid some undesired behaviour. Using example of sending `text/plain`:
+```php
+require 'universalphpmailer.class.php';
+
+$mailor = new universalPHPmailer;
+
+$mailor->toName    = $mailor->formatDisplayName('Mao "Chairman" 毛泽东');
+$mailor->toEmail   = 'mao@backintime.sample';
+$mailor->subject   = '請問';
+$mailor->fromName  = $mailor->formatDisplayName('James J. Jones');
+$mailor->fromEmail = 'james.jones@udwiwobg';
+$mailor->hostName  = 'host.name.sample';
+
+$mailor->textPlain = 'Hi 泽东,
+
+Is there life in the afterworld?
+
+Best regards,
+J.J.J.';
+
+$msgID = $mailor->sendMessage();
+
+if (!empty($msgID)) {
+  echo 'Successfully sent message ID ..... '. $msgID;
+}
+
+```
