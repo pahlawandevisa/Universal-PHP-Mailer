@@ -3,7 +3,7 @@
 /**
  * Universal PHP Mailer
  *
- * @version    0.6 (2016-11-23 08:36:00 GMT)
+ * @version    0.6.1 (2016-11-23 11:02:00 GMT)
  * @author     Peter Kahl <peter.kahl@colossalmind.com>
  * @copyright  2016 Peter Kahl
  * @license    Apache License, Version 2.0
@@ -29,7 +29,7 @@ class universalPHPmailer {
    * Version
    * @var string
    */
-  const VERSION = '0.6';
+  const VERSION = '0.6.1';
 
   /**
    * Recipeint's display name
@@ -593,7 +593,7 @@ class universalPHPmailer {
    */
   private function break2segments($str) {
     $len = iconv_strlen($str);
-    $max = floor(LINE_LEN_SINGLE / 6.5);
+    $max = floor(self::LINE_LEN_SINGLE / 6.5);
     if ($len < $max) {
       return array($str);
     }
