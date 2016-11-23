@@ -3,7 +3,7 @@
 /**
  * Universal PHP Mailer
  *
- * @version    0.5.16 (2016-11-23 05:04:00 GMT)
+ * @version    0.6 (2016-11-23 08:36:00 GMT)
  * @author     Peter Kahl <peter.kahl@colossalmind.com>
  * @copyright  2016 Peter Kahl
  * @license    Apache License, Version 2.0
@@ -29,7 +29,7 @@ class universalPHPmailer {
    * Version
    * @var string
    */
-  const VERSION = '0.5.16';
+  const VERSION = '0.6';
 
   /**
    * Recipeint's display name
@@ -493,16 +493,9 @@ class universalPHPmailer {
   /**
    * Formats display name in headers per RFC5322.
    * NOTE: Use this method if you want to avoid some unpleasant surprises.
-   * Per RFC5322, headers with email address To:, From:, ...
-   * should be like this:
-   *
-   *   To: John Public <johnpublic@blah.something>
-   *   To: "John Q. Public" <johnqpublic@blah.blah>
-   *   To: "John \"Big Cahuna\" Smith" <john@bla.another>
-   *   To: "John Doe" (the common guy) <jon.doe@sample.test>
    *
    * name    @var string ..... unquoted and unescaped display name
-   * comment @var string ..... without braces; optional
+   * comment @var string ..... without braces, ASCII only; optional
    */
   public function formatDisplayName($name, $comment = '') {
     if (preg_match('~[,;:\(\)\[\]\.\\<>@"]~', $name)) {
@@ -523,7 +516,7 @@ class universalPHPmailer {
 
   /**
    * Make sure that display name ($name) is formated per RFC5322.
-   * You may want to use the method 'formatDisplayName' to assure
+   * The easiest would be to use the method 'formatDisplayName' to assure
    * compliance with RFC5322.
    */
   private function encodeNameHeader($hdr, $name, $email) {
@@ -533,6 +526,19 @@ class universalPHPmailer {
   #-------------------------------------------------------------------
 
   private function encodeHeader($hdr, $str, $fold = true) {
+    if ($fold) {
+      return $this->foldLine($hdr.': '.$this->encodeString($str));
+    }
+    return $hdr.': '.$this->encodeString($str);
+  }
+
+  #-------------------------------------------------------------------
+
+  /**
+   * Takes a string and encodes only those substrings that are non-ASCII.
+   *
+   */
+  private function encodeString($str) {
     $str = preg_replace('/\s+/', ' ', $str);
     if ($this->isMultibyteString($str)) {
       $chars = preg_split('//u', $str, -1, PREG_SPLIT_NO_EMPTY); # array
@@ -547,7 +553,11 @@ class universalPHPmailer {
         else {
           # Subsequent character (2,3,...)
           $mbPrev = $mb;
-          $mb = $this->isMultibyteString($ch);
+          # If preceeding character is multibyte, whitespace should
+          # also be grouped and encoded with preceeding character.
+          if ($ch != ' ') {
+            $mb = $this->isMultibyteString($ch);
+          }
           if ($mbPrev == $mb) {
             $new[$kn] .= $ch; # Same type as previous
           }
@@ -561,17 +571,37 @@ class universalPHPmailer {
       $str = '';
       foreach ($new as $segm) {
         if ($this->isMultibyteString($segm)) {
-          $str .= $this->encodeRFC2047($segm);
+          $arr = $this->break2segments($segm);
+          foreach ($arr as $ak => $av) {
+            $arr[$ak] = $this->encodeRFC2047($av);
+          }
+          $str .= implode(' ', $arr);
         }
         else {
           $str .= $segm;
         }
       }
     }
-    if ($fold) {
-      return $this->foldLine($hdr.': '.$str);
+    return $str;
+  }
+
+  #-------------------------------------------------------------------
+
+  /**
+   * Break string of multibyte characters into shorter segments
+   *
+   */
+  private function break2segments($str) {
+    $len = iconv_strlen($str);
+    $max = floor(LINE_LEN_SINGLE / 6.5);
+    if ($len < $max) {
+      return array($str);
     }
-    return $hdr.': '.$str;
+    $arr = array();
+    for ($k = 0; $k*$max < $len; $k++) {
+      $arr[$k] = mb_substr($str, 0+$k*$max, $max);
+    }
+    return $arr;
   }
 
   #-------------------------------------------------------------------
@@ -614,7 +644,22 @@ class universalPHPmailer {
     if (strlen($str) < self::LINE_LEN_SINGLE) {
       return $str;
     }
-    return wordwrap($str, self::LINE_LEN_SINGLE-2, PHP_EOL.' ');
+    $arr = explode(PHP_EOL, wordwrap($str, self::LINE_LEN_SINGLE-2, PHP_EOL));
+    $new = array();
+    foreach ($arr as $av) {
+      if (strlen($av) > self::LINE_LEN_SINGLE-2 && strpos($av, '?=') !== false) {
+        $tmp = explode('?=', $av);
+        foreach ($tmp as $tv) {
+          if (!empty($tv)) {
+            $new[] = $tv.'?=';
+          }
+        }
+      }
+      else {
+        $new[] = $av;
+      }
+    }
+    return implode(PHP_EOL.' ', $new);
   }
 
   #-------------------------------------------------------------------
