@@ -3,7 +3,7 @@
 /**
  * Universal PHP Mailer
  *
- * @version    0.5.15 (2016-11-23 03:07:00 GMT)
+ * @version    0.5.16 (2016-11-23 05:04:00 GMT)
  * @author     Peter Kahl <peter.kahl@colossalmind.com>
  * @copyright  2016 Peter Kahl
  * @license    Apache License, Version 2.0
@@ -29,7 +29,7 @@ class universalPHPmailer {
    * Version
    * @var string
    */
-  const VERSION = '0.5.15';
+  const VERSION = '0.5.16';
 
   /**
    * Recipeint's display name
@@ -561,7 +561,7 @@ class universalPHPmailer {
       $str = '';
       foreach ($new as $segm) {
         if ($this->isMultibyteString($segm)) {
-          $str .= $this->encodeMimeString($segm);
+          $str .= $this->encodeRFC2047($segm);
         }
         else {
           $str .= $segm;
@@ -576,16 +576,19 @@ class universalPHPmailer {
 
   #-------------------------------------------------------------------
 
-  private function encodeMimeString($str) {
-    $preferences = array(
-      "input-charset"      => 'utf-8',
-      "output-charset"     => 'utf-8',
-      "line-length"        => 999,
-      "line-break-chars"   => '',
-      "scheme"             => "B"
-    );
-    $enc = iconv_mime_encode('XXX', $str, $preferences);
-    return preg_replace('/^XXX:\s/', '', $enc);
+  /**
+   * MIME Encode Non-ASCII Text
+   * https://tools.ietf.org/html/rfc2047
+   *
+   */
+  private function encodeRFC2047($str, $scheme = 'B') {
+    if ($scheme == 'B') {
+      return '=?utf-8?B?'.base64_encode($str).'?=';
+    }
+    if ($scheme == 'Q') {
+      return '=?utf-8?Q?'.str_replace(array(' ','?','_'), array('=20','=3F','=5F'), quoted_printable_encode($str)).'?=';
+    }
+    throw new Exception('Illegal value of argument scheme');
   }
 
   #-------------------------------------------------------------------
