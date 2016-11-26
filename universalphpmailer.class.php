@@ -3,7 +3,7 @@
 /**
  * Universal PHP Mailer
  *
- * @version    0.6.1 (2016-11-23 11:02:00 GMT)
+ * @version    0.6.2 (2016-11-26 08:06:00 GMT)
  * @author     Peter Kahl <peter.kahl@colossalmind.com>
  * @copyright  2016 Peter Kahl
  * @license    Apache License, Version 2.0
@@ -29,7 +29,7 @@ class universalPHPmailer {
    * Version
    * @var string
    */
-  const VERSION = '0.6.1';
+  const VERSION = '0.6.2';
 
   /**
    * Recipeint's display name
@@ -155,6 +155,7 @@ class universalPHPmailer {
    */
   const LINE_LEN_SINGLE = 78;
   const LINE_LEN_TOTAL  = 998;
+  const CRLF            = "\r\n";
 
   #-------------------------------------------------------------------
 
@@ -255,42 +256,42 @@ class universalPHPmailer {
             #-----------------
             # boundary START
             if (!empty($this->textPlain) || !empty($this->textHtml)) {
-              $body .= '--'.$this->getBoundary($multiTypes[$k]).PHP_EOL;
+              $body .= '--'.$this->getBoundary($multiTypes[$k]).self::CRLF;
             }
             #-----------------
           }
           else {
             # 2nd, 3rd ... announcement
-            $body .= 'Content-Type: '.$multiTypes[$k].';'.PHP_EOL;
-            $body .= "\tboundary=\"".$this->getBoundary($multiTypes[$k]).'"'.PHP_EOL;
-            $body .= PHP_EOL;
+            $body .= 'Content-Type: '.$multiTypes[$k].';'.self::CRLF;
+            $body .= "\tboundary=\"".$this->getBoundary($multiTypes[$k]).'"'.self::CRLF;
+            $body .= self::CRLF;
             #-----------------
             # boundary START
-            $body .= '--'.$this->getBoundary($multiTypes[$k]).PHP_EOL;
+            $body .= '--'.$this->getBoundary($multiTypes[$k]).self::CRLF;
             #-----------------
           }
           #-----------------
           if ($multiTypes[$k] == 'multipart/alternative') {
             if (!empty($this->textContentLanguage)) {
-              $body .= 'Content-Language: '.$this->textContentLanguage.PHP_EOL;
+              $body .= 'Content-Language: '.$this->textContentLanguage.self::CRLF;
             }
-            $body .= 'Content-type: text/plain; charset=utf-8'.PHP_EOL;
-            $body .= 'Content-Transfer-Encoding: '.$this->textEncoding.PHP_EOL;
-            $body .= PHP_EOL;
-            $body .= $this->encodeBody(trim($this->textPlain)).PHP_EOL;
+            $body .= 'Content-type: text/plain; charset=utf-8'.self::CRLF;
+            $body .= 'Content-Transfer-Encoding: '.$this->textEncoding.self::CRLF;
+            $body .= self::CRLF;
+            $body .= $this->encodeBody(trim($this->textPlain)).self::CRLF;
             #-----------------
             # boundary
-            $body .= '--'.$this->getBoundary($multiTypes[$k]).PHP_EOL;
+            $body .= '--'.$this->getBoundary($multiTypes[$k]).self::CRLF;
             #-----------------
           }
           elseif ($multiTypes[$k] == 'multipart/related') {
             if (!empty($this->textContentLanguage)) {
-              $body .= 'Content-Language: '.$this->textContentLanguage.PHP_EOL;
+              $body .= 'Content-Language: '.$this->textContentLanguage.self::CRLF;
             }
-            $body .= 'Content-type: text/html; charset=utf-8'.PHP_EOL;
-            $body .= 'Content-Transfer-Encoding: '.$this->textEncoding.PHP_EOL;
-            $body .= PHP_EOL;
-            $body .= $this->encodeBody(trim($this->textHtml)).PHP_EOL;
+            $body .= 'Content-type: text/html; charset=utf-8'.self::CRLF;
+            $body .= 'Content-Transfer-Encoding: '.$this->textEncoding.self::CRLF;
+            $body .= self::CRLF;
+            $body .= $this->encodeBody(trim($this->textHtml)).self::CRLF;
             if (!empty($this->inlineImage)) {
               $body .= $this->generateInlineImageParts($multiTypes[$k]);
             }
@@ -306,7 +307,7 @@ class universalPHPmailer {
           }
           #-----------------
           # boundary END
-          $body .= '--'.$this->getBoundary($multiTypes[$k]).'--'.PHP_EOL.PHP_EOL;
+          $body .= '--'.$this->getBoundary($multiTypes[$k]).'--'.self::CRLF.self::CRLF;
           #-----------------
           $k--;
         }
@@ -314,7 +315,7 @@ class universalPHPmailer {
           $go = false;
         }
       }
-      $body = rtrim($body).PHP_EOL;
+      $body = rtrim($body).self::CRLF;
     }
     #=====================================================
     else {
@@ -343,7 +344,7 @@ class universalPHPmailer {
           $headers[] = 'Content-Disposition: attachment;';
           $headers[] = "\tfilename=\"".$atv['original-filename'].'";';
           $headers[] = "\tsize=".$atv['size'];
-          $body      = chunk_split($atv['base64-data']);
+          $body      = chunk_split($atv['base64-data'], self::LINE_LEN_SINGLE, self::CRLF);
           break;
         }
       }
@@ -353,7 +354,7 @@ class universalPHPmailer {
     }
     #=====================================================
 
-    $headers = implode(PHP_EOL, $headers).PHP_EOL;
+    $headers = implode(self::CRLF, $headers).self::CRLF;
 
     if (empty($this->returnPath)) {
       $this->returnPath = $this->fromEmail;
@@ -371,13 +372,13 @@ class universalPHPmailer {
   private function generateInlineImageParts($boundaryKey) {
     $str = '';
     foreach ($this->inlineImage as $key => $val) {
-      $str .= '--'.$this->getBoundary($boundaryKey).PHP_EOL;
-      $str .= 'Content-ID: <'.$val['content-id'].'>'.PHP_EOL;
-      $str .= 'Content-Type: '.$this->getMimeType($val['file-extension']).'; name="'.$val['original-filename'].'"'.PHP_EOL;
-      $str .= 'Content-Transfer-Encoding: base64'.PHP_EOL;
-      $str .= 'Content-Disposition: inline; filename="'.$val['original-filename'].'"'.PHP_EOL;
-      $str .= PHP_EOL;
-      $str .= chunk_split($val['base64-data']).PHP_EOL;
+      $str .= '--'.$this->getBoundary($boundaryKey).self::CRLF;
+      $str .= 'Content-ID: <'.$val['content-id'].'>'.self::CRLF;
+      $str .= 'Content-Type: '.$this->getMimeType($val['file-extension']).'; name="'.$val['original-filename'].'"'.self::CRLF;
+      $str .= 'Content-Transfer-Encoding: base64'.self::CRLF;
+      $str .= 'Content-Disposition: inline; filename="'.$val['original-filename'].'"'.self::CRLF;
+      $str .= self::CRLF;
+      $str .= chunk_split($val['base64-data'], self::LINE_LEN_SINGLE, self::CRLF).self::CRLF;
     }
     return $str;
   }
@@ -416,15 +417,15 @@ class universalPHPmailer {
   private function generateAttachmentParts($boundaryKey) {
     $str = '';
     foreach ($this->attachment as $key => $val) {
-      $str .= '--'.$this->getBoundary($boundaryKey).PHP_EOL;
-      $str .= 'Content-Type: '.$this->getMimeType($val['file-extension']).';'.PHP_EOL;
-      $str .= "\tname=\"".$val['original-filename'].'"'.PHP_EOL;
-      $str .= 'Content-Transfer-Encoding: base64'.PHP_EOL;
-      $str .= 'Content-Disposition: attachment;'.PHP_EOL;
-      $str .= "\tfilename=\"".$val['original-filename'].'";'.PHP_EOL;
-      $str .= "\tsize=".$val['size'].PHP_EOL;
-      $str .= PHP_EOL;
-      $str .= chunk_split($val['base64-data']).PHP_EOL;
+      $str .= '--'.$this->getBoundary($boundaryKey).self::CRLF;
+      $str .= 'Content-Type: '.$this->getMimeType($val['file-extension']).';'.self::CRLF;
+      $str .= "\tname=\"".$val['original-filename'].'"'.self::CRLF;
+      $str .= 'Content-Transfer-Encoding: base64'.self::CRLF;
+      $str .= 'Content-Disposition: attachment;'.self::CRLF;
+      $str .= "\tfilename=\"".$val['original-filename'].'";'.self::CRLF;
+      $str .= "\tsize=".$val['size'].self::CRLF;
+      $str .= self::CRLF;
+      $str .= chunk_split($val['base64-data'], self::LINE_LEN_SINGLE, self::CRLF).self::CRLF;
     }
     return $str;
   }
@@ -593,7 +594,7 @@ class universalPHPmailer {
    */
   private function break2segments($str) {
     $len = iconv_strlen($str);
-    $max = floor(self::LINE_LEN_SINGLE / 6.5);
+    $max = floor(self::LINE_LEN_SINGLE / 9);
     if ($len < $max) {
       return array($str);
     }
@@ -641,13 +642,13 @@ class universalPHPmailer {
     if (strlen($str) > self::LINE_LEN_TOTAL) {
       throw new Exception('Line length exceeds RFC5322 limit of '.self::LINE_LEN_TOTAL);
     }
-    if (strlen($str) < self::LINE_LEN_SINGLE) {
+    if (strlen($str) <= self::LINE_LEN_SINGLE) {
       return $str;
     }
-    $arr = explode(PHP_EOL, wordwrap($str, self::LINE_LEN_SINGLE-2, PHP_EOL));
+    $arr = explode(self::CRLF, wordwrap($str, self::LINE_LEN_SINGLE, self::CRLF));
     $new = array();
     foreach ($arr as $av) {
-      if (strlen($av) > self::LINE_LEN_SINGLE-2 && strpos($av, '?=') !== false) {
+      if (strlen($av) > self::LINE_LEN_SINGLE && strpos($av, '?=') !== false) {
         $tmp = explode('?=', $av);
         foreach ($tmp as $tv) {
           if (!empty($tv)) {
@@ -659,7 +660,7 @@ class universalPHPmailer {
         $new[] = $av;
       }
     }
-    return implode(PHP_EOL.' ', $new);
+    return implode(self::CRLF.' ', $new);
   }
 
   #-------------------------------------------------------------------
@@ -675,9 +676,9 @@ class universalPHPmailer {
 
   private function encodeBody($str) {
     if ($this->textEncoding == 'quoted-printable') {
-      return quoted_printable_encode($str).PHP_EOL;
+      return quoted_printable_encode($str).self::CRLF;
     }
-    return chunk_split(base64_encode($str));
+    return chunk_split(base64_encode($str), self::LINE_LEN_SINGLE, self::CRLF);
   }
 
   #-------------------------------------------------------------------
