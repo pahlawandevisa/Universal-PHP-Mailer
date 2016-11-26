@@ -3,7 +3,7 @@
 /**
  * Universal PHP Mailer
  *
- * @version    0.6.2 (2016-11-26 08:06:00 GMT)
+ * @version    0.6.3 (2016-11-26 23:39:00 GMT)
  * @author     Peter Kahl <peter.kahl@colossalmind.com>
  * @copyright  2016 Peter Kahl
  * @license    Apache License, Version 2.0
@@ -29,7 +29,7 @@ class universalPHPmailer {
    * Version
    * @var string
    */
-  const VERSION = '0.6.2';
+  const VERSION = '0.6.3';
 
   /**
    * Recipeint's display name
@@ -157,6 +157,12 @@ class universalPHPmailer {
   const LINE_LEN_TOTAL  = 998;
   const CRLF            = "\r\n";
 
+  /**
+   * Internal multibyte encoding
+   *
+   */
+  private $intEncoding;
+
   #-------------------------------------------------------------------
 
   public function __construct() {
@@ -164,6 +170,7 @@ class universalPHPmailer {
     $this->inlineImage    = array();
     $this->attachmentKey  = 0;
     $this->attachment     = array();
+    $this->intEncoding    = strtolower(mb_internal_encoding());
   }
 
   #-------------------------------------------------------------------
@@ -275,7 +282,7 @@ class universalPHPmailer {
             if (!empty($this->textContentLanguage)) {
               $body .= 'Content-Language: '.$this->textContentLanguage.self::CRLF;
             }
-            $body .= 'Content-type: text/plain; charset=utf-8'.self::CRLF;
+            $body .= 'Content-type: text/plain; charset='.$this->intEncoding.self::CRLF;
             $body .= 'Content-Transfer-Encoding: '.$this->textEncoding.self::CRLF;
             $body .= self::CRLF;
             $body .= $this->encodeBody(trim($this->textPlain)).self::CRLF;
@@ -288,7 +295,7 @@ class universalPHPmailer {
             if (!empty($this->textContentLanguage)) {
               $body .= 'Content-Language: '.$this->textContentLanguage.self::CRLF;
             }
-            $body .= 'Content-type: text/html; charset=utf-8'.self::CRLF;
+            $body .= 'Content-type: text/html; charset='.$this->intEncoding.self::CRLF;
             $body .= 'Content-Transfer-Encoding: '.$this->textEncoding.self::CRLF;
             $body .= self::CRLF;
             $body .= $this->encodeBody(trim($this->textHtml)).self::CRLF;
@@ -324,7 +331,7 @@ class universalPHPmailer {
         if (!empty($this->textContentLanguage)) {
           $headers[] = 'Content-Language: '.$this->textContentLanguage;
         }
-        $headers[] = 'Content-type: text/plain; charset=utf-8';
+        $headers[] = 'Content-type: text/plain; charset='.$this->intEncoding;
         $headers[] = 'Content-Transfer-Encoding: '.$this->textEncoding;
         $body      = $this->encodeBody(trim($this->textPlain));
       }
@@ -332,7 +339,7 @@ class universalPHPmailer {
         if (!empty($this->textContentLanguage)) {
           $headers[] = 'Content-Language: '.$this->textContentLanguage;
         }
-        $headers[] = 'Content-type: text/html; charset=utf-8';
+        $headers[] = 'Content-type: text/html; charset='.$this->intEncoding;
         $headers[] = 'Content-Transfer-Encoding: '.$this->textEncoding;
         $body      = $this->encodeBody(trim($this->textHtml));
       }
@@ -594,7 +601,7 @@ class universalPHPmailer {
    */
   private function break2segments($str) {
     $len = iconv_strlen($str);
-    $max = floor(self::LINE_LEN_SINGLE / 9);
+    $max = floor(self::LINE_LEN_SINGLE / 10);
     if ($len < $max) {
       return array($str);
     }
@@ -612,12 +619,15 @@ class universalPHPmailer {
    * https://tools.ietf.org/html/rfc2047
    *
    */
-  private function encodeRFC2047($str, $scheme = 'B') {
-    if ($scheme == 'B') {
-      return '=?utf-8?B?'.base64_encode($str).'?=';
+  private function encodeRFC2047($str, $scheme = 'b', $charset = '') {
+    if (empty($charset)) {
+      $charset = $this->intEncoding;
     }
-    if ($scheme == 'Q') {
-      return '=?utf-8?Q?'.str_replace(array(' ','?','_'), array('=20','=3F','=5F'), quoted_printable_encode($str)).'?=';
+    if (strtolower($scheme) == 'b') {
+      return '=?'.$charset.'?B?'.base64_encode($str).'?=';
+    }
+    if (strtolower($scheme) == 'q') {
+      return '=?'.$charset.'?Q?'.str_replace(array(' ','?','_'), array('=20','=3F','=5F'), quoted_printable_encode($str)).'?=';
     }
     throw new Exception('Illegal value of argument scheme');
   }
