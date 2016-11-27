@@ -3,7 +3,7 @@
 /**
  * Universal PHP Mailer
  *
- * @version    0.6.3 (2016-11-26 23:39:00 GMT)
+ * @version    0.7 (2016-11-27 09:06:00 GMT)
  * @author     Peter Kahl <peter.kahl@colossalmind.com>
  * @copyright  2016 Peter Kahl
  * @license    Apache License, Version 2.0
@@ -29,7 +29,14 @@ class universalPHPmailer {
    * Version
    * @var string
    */
-  const VERSION = '0.6.3';
+  const VERSION = '0.7';
+
+  /**
+   * Method used to send mail
+   * @var string
+   * Valid values are 'mail'; @TODO 'smtp'
+   */
+  const METHOD = 'mail';
 
   /**
    * Recipeint's display name
@@ -148,57 +155,89 @@ class universalPHPmailer {
    */
   private $attachmentKey;
 
+  private $mimeHeaders;
+
+  private $mimeBody;
+
   /**
-   * Line length limits per RFC5322
+   * Line wrapping & length limits per RFC5322
    * https://tools.ietf.org/html/rfc5322.html#section-2.1.1
    * @var integer
    */
-  const LINE_LEN_SINGLE = 78;
-  const LINE_LEN_TOTAL  = 998;
-  const CRLF            = "\r\n";
+  const WRAP_LEN = 78;
+  const LINE_LEN_MAX = 998;
+
+  const CRLF = "\r\n";
 
   /**
-   * Internal multibyte encoding
+   * Character set of the message
    *
    */
-  private $intEncoding;
+  const CHARSET = 'utf-8';
 
-  #-------------------------------------------------------------------
+  #===================================================================
 
   public function __construct() {
     $this->inlineImageKey = 0;
     $this->inlineImage    = array();
     $this->attachmentKey  = 0;
     $this->attachment     = array();
-    $this->intEncoding    = strtolower(mb_internal_encoding());
+    $this->mimeHeaders    = array();
+    $this->mimeBody       = '';
   }
 
-  #-------------------------------------------------------------------
+  #===================================================================
 
   public function sendMessage() {
+
+    $this->composeMessage();
+
+    if (self::METHOD == 'mail') {
+      $to      = preg_replace('/^To:\s/', '', $this->encodeNameHeader('To', $this->toName, $this->toEmail));
+      $subject = preg_replace('/^Subject:\s/', '', $this->encodeHeader('Subject', $this->subject));
+      #----
+      if (mail($to, $subject, $this->mimeBody, $this->mimeHeaders, '-f'.$this->returnPath) !== false) {
+        return $this->messageId; # On success returns message ID.
+      }
+      return false;
+    }
+    #----
+    if (self::METHOD == 'smtp') {
+      throw new Exception('METHOD smtp is not available');
+    }
+    #----
+    throw new Exception('Illegal value of property METHOD');
+  }
+
+  #===================================================================
+
+  private function composeMessage() {
 
     $this->rbstr = false;
     $this->setEncoding();
 
-    $to        = preg_replace('/^To:\s/', '', $this->encodeNameHeader('To', $this->toName, $this->toEmail));
-    $subject   = preg_replace('/^Subject:\s/', '', $this->encodeHeader('Subject', $this->subject));
-    $body      = '';
-    $headers   = array();
-    $headers[] = $this->getHeaderDate();
-    $headers[] = $this->getHeaderMessageId();
-    $headers[] = $this->getHeaderFrom();
+    if (self::METHOD != 'mail') {
+      $this->mimeHeaders[] = $this->encodeNameHeader('To', $this->toName, $this->toEmail);
+      $this->mimeHeaders[] = $this->encodeHeader('Subject', $this->subject);
+    }
+
+    $this->mimeHeaders[] = $this->getHeaderDate();
+    $this->mimeHeaders[] = $this->getHeaderMessageId();
+    $this->mimeHeaders[] = $this->getHeaderFrom();
+
     if (!empty($this->customHeaders) && is_array($this->customHeaders)) {
       foreach ($this->customHeaders as $key => $val) {
-        $headers[] = $this->encodeHeader($key, $val);
+        $this->mimeHeaders[] = $this->encodeHeader($key, $val);
       }
     }
-    $headers[] = $this->foldLine('X-Mailer: universalPHPmailer/'.self::VERSION.' (https://github.com/peterkahl/Universal-PHP-Mailer)');
-    $headers[] = 'MIME-Version: 1.0';
+
+    $this->mimeHeaders[] = $this->foldLine('X-Mailer: universalPHPmailer/'.self::VERSION.' (https://github.com/peterkahl/Universal-PHP-Mailer)');
+    $this->mimeHeaders[] = 'MIME-Version: 1.0';
 
     $multiTypes = array();
     $i = -1;
 
-    #=====================================================
+    #---------------------------------------------------
 
     if (!empty($this->attachment) && count($this->attachment) > 1 && empty($this->textPlain) && empty($this->textHtml)) {
       # Multiple attachment and nothing else
@@ -244,7 +283,7 @@ class universalPHPmailer {
       }
     }
 
-    #=====================================================
+    #---------------------------------------------------
     if ($i > -1) { # Multipart
       $go  = true;
       $k   = 0;
@@ -258,49 +297,49 @@ class universalPHPmailer {
           # counting up
           if ($k == 0) {
             # First multipart section announcement
-            $headers[] = 'Content-Type: '.$multiTypes[$k].';';
-            $headers[] = "\tboundary=\"".$this->getBoundary($multiTypes[$k]).'"';
+            $this->mimeHeaders[] = 'Content-Type: '.$multiTypes[$k].';';
+            $this->mimeHeaders[] = "\tboundary=\"".$this->getBoundary($multiTypes[$k]).'"';
             #-----------------
             # boundary START
             if (!empty($this->textPlain) || !empty($this->textHtml)) {
-              $body .= '--'.$this->getBoundary($multiTypes[$k]).self::CRLF;
+              $this->mimeBody .= '--'.$this->getBoundary($multiTypes[$k]).self::CRLF;
             }
             #-----------------
           }
           else {
             # 2nd, 3rd ... announcement
-            $body .= 'Content-Type: '.$multiTypes[$k].';'.self::CRLF;
-            $body .= "\tboundary=\"".$this->getBoundary($multiTypes[$k]).'"'.self::CRLF;
-            $body .= self::CRLF;
+            $this->mimeBody .= 'Content-Type: '.$multiTypes[$k].';'.self::CRLF;
+            $this->mimeBody .= "\tboundary=\"".$this->getBoundary($multiTypes[$k]).'"'.self::CRLF;
+            $this->mimeBody .= self::CRLF;
             #-----------------
             # boundary START
-            $body .= '--'.$this->getBoundary($multiTypes[$k]).self::CRLF;
+            $this->mimeBody .= '--'.$this->getBoundary($multiTypes[$k]).self::CRLF;
             #-----------------
           }
           #-----------------
           if ($multiTypes[$k] == 'multipart/alternative') {
             if (!empty($this->textContentLanguage)) {
-              $body .= 'Content-Language: '.$this->textContentLanguage.self::CRLF;
+              $this->mimeBody .= 'Content-Language: '.$this->textContentLanguage.self::CRLF;
             }
-            $body .= 'Content-type: text/plain; charset='.$this->intEncoding.self::CRLF;
-            $body .= 'Content-Transfer-Encoding: '.$this->textEncoding.self::CRLF;
-            $body .= self::CRLF;
-            $body .= $this->encodeBody(trim($this->textPlain)).self::CRLF;
+            $this->mimeBody .= 'Content-type: text/plain; charset='.self::CHARSET.self::CRLF;
+            $this->mimeBody .= 'Content-Transfer-Encoding: '.$this->textEncoding.self::CRLF;
+            $this->mimeBody .= self::CRLF;
+            $this->mimeBody .= $this->encodeBody(trim($this->textPlain)).self::CRLF;
             #-----------------
             # boundary
-            $body .= '--'.$this->getBoundary($multiTypes[$k]).self::CRLF;
+            $this->mimeBody .= '--'.$this->getBoundary($multiTypes[$k]).self::CRLF;
             #-----------------
           }
           elseif ($multiTypes[$k] == 'multipart/related') {
             if (!empty($this->textContentLanguage)) {
-              $body .= 'Content-Language: '.$this->textContentLanguage.self::CRLF;
+              $this->mimeBody .= 'Content-Language: '.$this->textContentLanguage.self::CRLF;
             }
-            $body .= 'Content-type: text/html; charset='.$this->intEncoding.self::CRLF;
-            $body .= 'Content-Transfer-Encoding: '.$this->textEncoding.self::CRLF;
-            $body .= self::CRLF;
-            $body .= $this->encodeBody(trim($this->textHtml)).self::CRLF;
+            $this->mimeBody .= 'Content-type: text/html; charset='.self::CHARSET.self::CRLF;
+            $this->mimeBody .= 'Content-Transfer-Encoding: '.$this->textEncoding.self::CRLF;
+            $this->mimeBody .= self::CRLF;
+            $this->mimeBody .= $this->encodeBody(trim($this->textHtml)).self::CRLF;
             if (!empty($this->inlineImage)) {
-              $body .= $this->generateInlineImageParts($multiTypes[$k]);
+              $this->mimeBody .= $this->generateInlineImageParts($multiTypes[$k]);
             }
           }
           #-----------------
@@ -310,11 +349,11 @@ class universalPHPmailer {
           # down
           #-----------------
           if ($multiTypes[$k] == 'multipart/mixed') {
-            $body .= $this->generateAttachmentParts($multiTypes[$k]);
+            $this->mimeBody .= $this->generateAttachmentParts($multiTypes[$k]);
           }
           #-----------------
           # boundary END
-          $body .= '--'.$this->getBoundary($multiTypes[$k]).'--'.self::CRLF.self::CRLF;
+          $this->mimeBody .= '--'.$this->getBoundary($multiTypes[$k]).'--'.self::CRLF.self::CRLF;
           #-----------------
           $k--;
         }
@@ -322,36 +361,36 @@ class universalPHPmailer {
           $go = false;
         }
       }
-      $body = rtrim($body).self::CRLF;
+      $this->mimeBody = rtrim($this->mimeBody).self::CRLF;
     }
-    #=====================================================
+    #---------------------------------------------------
     else {
       # Not multipart
       if (!empty($this->textPlain)) {
         if (!empty($this->textContentLanguage)) {
-          $headers[] = 'Content-Language: '.$this->textContentLanguage;
+          $this->mimeHeaders[] = 'Content-Language: '.$this->textContentLanguage;
         }
-        $headers[] = 'Content-type: text/plain; charset='.$this->intEncoding;
-        $headers[] = 'Content-Transfer-Encoding: '.$this->textEncoding;
-        $body      = $this->encodeBody(trim($this->textPlain));
+        $this->mimeHeaders[] = 'Content-type: text/plain; charset='.self::CHARSET;
+        $this->mimeHeaders[] = 'Content-Transfer-Encoding: '.$this->textEncoding;
+        $this->mimeBody      = $this->encodeBody(trim($this->textPlain));
       }
       elseif (!empty($this->textHtml)) {
         if (!empty($this->textContentLanguage)) {
-          $headers[] = 'Content-Language: '.$this->textContentLanguage;
+          $this->mimeHeaders[] = 'Content-Language: '.$this->textContentLanguage;
         }
-        $headers[] = 'Content-type: text/html; charset='.$this->intEncoding;
-        $headers[] = 'Content-Transfer-Encoding: '.$this->textEncoding;
-        $body      = $this->encodeBody(trim($this->textHtml));
+        $this->mimeHeaders[] = 'Content-type: text/html; charset='.self::CHARSET;
+        $this->mimeHeaders[] = 'Content-Transfer-Encoding: '.$this->textEncoding;
+        $this->mimeBody      = $this->encodeBody(trim($this->textHtml));
       }
       elseif (!empty($this->attachment)) { # Only 1 attachment
         foreach ($this->attachment as $atk => $atv) {
-          $headers[] = 'Content-Type: '.$this->getMimeType($atv['file-extension']).';';
-          $headers[] = "\tname=\"".$atv['original-filename'].'"';
-          $headers[] = 'Content-Transfer-Encoding: base64';
-          $headers[] = 'Content-Disposition: attachment;';
-          $headers[] = "\tfilename=\"".$atv['original-filename'].'";';
-          $headers[] = "\tsize=".$atv['size'];
-          $body      = chunk_split($atv['base64-data'], self::LINE_LEN_SINGLE, self::CRLF);
+          $this->mimeHeaders[] = 'Content-Type: '.$this->getMimeType($atv['file-extension']).';';
+          $this->mimeHeaders[] = "\tname=\"".$atv['original-filename'].'"';
+          $this->mimeHeaders[] = 'Content-Transfer-Encoding: base64';
+          $this->mimeHeaders[] = 'Content-Disposition: attachment;';
+          $this->mimeHeaders[] = "\tfilename=\"".$atv['original-filename'].'";';
+          $this->mimeHeaders[] = "\tsize=".$atv['size'];
+          $this->mimeBody      = chunk_split($atv['base64-data'], self::WRAP_LEN, self::CRLF);
           break;
         }
       }
@@ -359,22 +398,16 @@ class universalPHPmailer {
         throw new Exception('There\'s no content');
       }
     }
-    #=====================================================
+    #---------------------------------------------------
 
-    $headers = implode(self::CRLF, $headers).self::CRLF;
+    $this->mimeHeaders = implode(self::CRLF, $this->mimeHeaders).self::CRLF;
 
     if (empty($this->returnPath)) {
       $this->returnPath = $this->fromEmail;
     }
-
-    $res = mail($to, $subject, $body, $headers, '-f'.$this->returnPath);
-    if ($res !== false) {
-      return $this->messageId; # On success returns message ID.
-    }
-    return false;
   }
 
-  #-------------------------------------------------------------------
+  #===================================================================
 
   private function generateInlineImageParts($boundaryKey) {
     $str = '';
@@ -385,12 +418,12 @@ class universalPHPmailer {
       $str .= 'Content-Transfer-Encoding: base64'.self::CRLF;
       $str .= 'Content-Disposition: inline; filename="'.$val['original-filename'].'"'.self::CRLF;
       $str .= self::CRLF;
-      $str .= chunk_split($val['base64-data'], self::LINE_LEN_SINGLE, self::CRLF).self::CRLF;
+      $str .= chunk_split($val['base64-data'], self::WRAP_LEN, self::CRLF).self::CRLF;
     }
     return $str;
   }
 
-  #-------------------------------------------------------------------
+  #===================================================================
 
   /**
    * Add an image to the private array inlineImage
@@ -419,7 +452,7 @@ class universalPHPmailer {
     return $cid;
   }
 
-  #-------------------------------------------------------------------
+  #===================================================================
 
   private function generateAttachmentParts($boundaryKey) {
     $str = '';
@@ -432,12 +465,12 @@ class universalPHPmailer {
       $str .= "\tfilename=\"".$val['original-filename'].'";'.self::CRLF;
       $str .= "\tsize=".$val['size'].self::CRLF;
       $str .= self::CRLF;
-      $str .= chunk_split($val['base64-data'], self::LINE_LEN_SINGLE, self::CRLF).self::CRLF;
+      $str .= chunk_split($val['base64-data'], self::WRAP_LEN, self::CRLF).self::CRLF;
     }
     return $str;
   }
 
-  #-------------------------------------------------------------------
+  #===================================================================
 
   public function addAttachment($filename) {
     if (!file_exists($filename)) {
@@ -452,7 +485,7 @@ class universalPHPmailer {
     $this->attachmentKey++;
   }
 
-  #-------------------------------------------------------------------
+  #===================================================================
 
   private function getBoundary($key) {
     if (empty($this->rbstr)) {
@@ -464,7 +497,7 @@ class universalPHPmailer {
     return $this->boundary[$key];
   }
 
-  #-------------------------------------------------------------------
+  #===================================================================
 
   private function getHeaderMessageId() {
     if (empty($this->hostName)) {
@@ -477,7 +510,7 @@ class universalPHPmailer {
     return 'Message-ID: <'.$this->messageId.'>';
   }
 
-  #-------------------------------------------------------------------
+  #===================================================================
 
   /**
    * RFC5322
@@ -490,13 +523,13 @@ class universalPHPmailer {
     return 'Date: '.date('D, j M Y H:i:s O (T)');
   }
 
-  #-------------------------------------------------------------------
+  #===================================================================
 
   private function getHeaderFrom() {
     return $this->encodeNameHeader('From', $this->fromName, $this->fromEmail);
   }
 
-  #-------------------------------------------------------------------
+  #===================================================================
 
   /**
    * Formats display name in headers per RFC5322.
@@ -520,7 +553,7 @@ class universalPHPmailer {
     return $name;
   }
 
-  #-------------------------------------------------------------------
+  #===================================================================
 
   /**
    * Make sure that display name ($name) is formated per RFC5322.
@@ -531,7 +564,7 @@ class universalPHPmailer {
     return $this->foldLine($this->encodeHeader($hdr, $name, false).' <'.$email.'>');
   }
 
-  #-------------------------------------------------------------------
+  #===================================================================
 
   private function encodeHeader($hdr, $str, $fold = true) {
     if ($fold) {
@@ -540,7 +573,7 @@ class universalPHPmailer {
     return $hdr.': '.$this->encodeString($str);
   }
 
-  #-------------------------------------------------------------------
+  #===================================================================
 
   /**
    * Takes a string and encodes only those substrings that are non-ASCII.
@@ -593,7 +626,7 @@ class universalPHPmailer {
     return $str;
   }
 
-  #-------------------------------------------------------------------
+  #===================================================================
 
   /**
    * Break string of multibyte characters into shorter segments
@@ -601,7 +634,7 @@ class universalPHPmailer {
    */
   private function break2segments($str) {
     $len = iconv_strlen($str);
-    $max = floor(self::LINE_LEN_SINGLE / 10);
+    $max = floor(self::WRAP_LEN / 10);
     if ($len < $max) {
       return array($str);
     }
@@ -612,7 +645,7 @@ class universalPHPmailer {
     return $arr;
   }
 
-  #-------------------------------------------------------------------
+  #===================================================================
 
   /**
    * MIME Encode Non-ASCII Text
@@ -621,7 +654,7 @@ class universalPHPmailer {
    */
   private function encodeRFC2047($str, $scheme = 'b', $charset = '') {
     if (empty($charset)) {
-      $charset = $this->intEncoding;
+      $charset = self::CHARSET;
     }
     if (strtolower($scheme) == 'b') {
       return '=?'.$charset.'?B?'.base64_encode($str).'?=';
@@ -632,13 +665,13 @@ class universalPHPmailer {
     throw new Exception('Illegal value of argument scheme');
   }
 
-  #-------------------------------------------------------------------
+  #===================================================================
 
   private function isMultibyteString($str) {
     return iconv_strlen($str, 'utf-8') < strlen($str);
   }
 
-  #-------------------------------------------------------------------
+  #===================================================================
 
   /**
    * Folding of excessively long header lines, RFC5322
@@ -649,16 +682,16 @@ class universalPHPmailer {
    *     need to set DKIM Canonicalization to 'relaxed'.
    */
   private function foldLine($str) {
-    if (strlen($str) > self::LINE_LEN_TOTAL) {
-      throw new Exception('Line length exceeds RFC5322 limit of '.self::LINE_LEN_TOTAL);
+    if (strlen($str) > self::LINE_LEN_MAX) {
+      throw new Exception('Line length exceeds RFC5322 limit of '.self::LINE_LEN_MAX);
     }
-    if (strlen($str) <= self::LINE_LEN_SINGLE) {
+    if (strlen($str) <= self::WRAP_LEN) {
       return $str;
     }
-    $arr = explode(self::CRLF, wordwrap($str, self::LINE_LEN_SINGLE, self::CRLF));
+    $arr = explode(self::CRLF, wordwrap($str, self::WRAP_LEN, self::CRLF));
     $new = array();
     foreach ($arr as $av) {
-      if (strlen($av) > self::LINE_LEN_SINGLE && strpos($av, '?=') !== false) {
+      if (strlen($av) > self::WRAP_LEN && strpos($av, '?=') !== false) {
         $tmp = explode('?=', $av);
         foreach ($tmp as $tv) {
           if (!empty($tv)) {
@@ -673,7 +706,7 @@ class universalPHPmailer {
     return implode(self::CRLF.' ', $new);
   }
 
-  #-------------------------------------------------------------------
+  #===================================================================
 
   private function setEncoding() {
     if (!empty($this->textEncoding) && in_array($this->textEncoding, array('quoted-printable', 'base64'))) {
@@ -682,16 +715,16 @@ class universalPHPmailer {
     $this->textEncoding = 'base64';
   }
 
-  #-------------------------------------------------------------------
+  #===================================================================
 
   private function encodeBody($str) {
     if ($this->textEncoding == 'quoted-printable') {
       return quoted_printable_encode($str).self::CRLF;
     }
-    return chunk_split(base64_encode($str), self::LINE_LEN_SINGLE, self::CRLF);
+    return chunk_split(base64_encode($str), self::WRAP_LEN, self::CRLF);
   }
 
-  #-------------------------------------------------------------------
+  #===================================================================
 
   private function endExplode($glue, $str) {
     if (strpos($str, $glue) === false) {
@@ -702,7 +735,7 @@ class universalPHPmailer {
     return $str;
   }
 
-  #-------------------------------------------------------------------
+  #===================================================================
 
   private function fileExtension($str) {
     if (strpos($str, '.') === false) {
@@ -714,7 +747,7 @@ class universalPHPmailer {
     return $str;
   }
 
-  #-------------------------------------------------------------------
+  #===================================================================
 
   private function getMimeType($ext) {
     if (array_key_exists($ext, $this->mimeType)) {
@@ -723,7 +756,7 @@ class universalPHPmailer {
     throw new Exception('Unknown mime type for given extension');
   }
 
-  #-------------------------------------------------------------------
+  #===================================================================
 
   /**
    * https://gist.github.com/nimasdj/801b0b1a50112ea6a997
