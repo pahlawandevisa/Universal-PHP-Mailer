@@ -3,7 +3,7 @@
 /**
  * Universal PHP Mailer
  *
- * @version    0.7 (2016-11-27 09:06:00 GMT)
+ * @version    0.7.1 (2016-11-27 23:13:00 GMT)
  * @author     Peter Kahl <peter.kahl@colossalmind.com>
  * @copyright  2016 Peter Kahl
  * @license    Apache License, Version 2.0
@@ -29,14 +29,14 @@ class universalPHPmailer {
    * Version
    * @var string
    */
-  const VERSION = '0.7';
+  const VERSION = '0.7.1';
 
   /**
    * Method used to send mail
    * @var string
    * Valid values are 'mail'; @TODO 'smtp'
    */
-  const METHOD = 'mail';
+  public $mailMethod = 'mail';
 
   /**
    * Recipeint's display name
@@ -182,31 +182,34 @@ class universalPHPmailer {
     $this->inlineImage    = array();
     $this->attachmentKey  = 0;
     $this->attachment     = array();
-    $this->mimeHeaders    = array();
-    $this->mimeBody       = '';
   }
 
   #===================================================================
 
   public function sendMessage() {
 
+    $this->mimeHeaders    = array();
+    $this->mimeBody       = '';
+
     $this->composeMessage();
 
-    if (self::METHOD == 'mail') {
+    if ($this->mailMethod == 'mail') {
       $to      = preg_replace('/^To:\s/', '', $this->encodeNameHeader('To', $this->toName, $this->toEmail));
       $subject = preg_replace('/^Subject:\s/', '', $this->encodeHeader('Subject', $this->subject));
+      $headers = implode(self::CRLF, $this->mimeHeaders).self::CRLF;
       #----
-      if (mail($to, $subject, $this->mimeBody, $this->mimeHeaders, '-f'.$this->returnPath) !== false) {
+      if (mail($to, $subject, $this->mimeBody, $headers, '-f'.$this->returnPath) !== false) {
         return $this->messageId; # On success returns message ID.
       }
       return false;
     }
     #----
-    if (self::METHOD == 'smtp') {
-      throw new Exception('METHOD smtp is not available');
+    if ($this->mailMethod == 'smtp') {
+      $mailStr = implode(self::CRLF, $this->mimeHeaders) . self::CRLF . $this->mimeBody;
+      throw new Exception('mailMethod value smtp is not yet available');
     }
     #----
-    throw new Exception('Illegal value of property METHOD');
+    throw new Exception('Illegal value of property mailMethod');
   }
 
   #===================================================================
@@ -216,7 +219,7 @@ class universalPHPmailer {
     $this->rbstr = false;
     $this->setEncoding();
 
-    if (self::METHOD != 'mail') {
+    if ($this->mailMethod != 'mail') {
       $this->mimeHeaders[] = $this->encodeNameHeader('To', $this->toName, $this->toEmail);
       $this->mimeHeaders[] = $this->encodeHeader('Subject', $this->subject);
     }
@@ -399,8 +402,6 @@ class universalPHPmailer {
       }
     }
     #---------------------------------------------------
-
-    $this->mimeHeaders = implode(self::CRLF, $this->mimeHeaders).self::CRLF;
 
     if (empty($this->returnPath)) {
       $this->returnPath = $this->fromEmail;
