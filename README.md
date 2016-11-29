@@ -253,7 +253,7 @@ foreach ($recipientArr as $recipient) {
 
 If you want to be sure that display name in headers is per RFC5322, use the method `formatDisplayName`. This will avoid some undesired behaviour.
 
-Here I am using and example of `text/plain` mail:
+(Here I am using an example of `text/plain` mail):
 ```php
 require 'universalphpmailer.class.php';
 
