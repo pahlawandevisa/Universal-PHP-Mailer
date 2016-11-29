@@ -1,5 +1,9 @@
 # Universal PHP Mailer
-Simple but powerful wrapper for the PHP `mail()` function, capable of sending anything. You can use it to send very simple mail and even some very complex. Just give it whatever content and fire it off. It configures itself. These are the possible combinations:
+Super simple yet powerful PHP mailer. At the moment, it's a wrapper for the PHP `mail()` function, but the plan is to expand to the `SMTP` method.
+
+This mailer is capable of sending anything. You can use it to send very simple mail and even some very complex content combinations. Just give it whatever you have and fire it off! It will automatically configure itself to compose the correct MIME mail string with whatever parts are appropriate.
+
+These are the possible combinations (automatic configurations):
 
 ##Non-multipart mail:
 - only one `attachment`
@@ -247,7 +251,9 @@ foreach ($recipientArr as $recipient) {
 
 ---
 
-How to correctly quote and escape display name in headers per RFC5322. This will avoid some undesired behaviour. Using example of sending `text/plain`:
+If you want to be sure that display name in headers is per RFC5322, use the method `formatDisplayName`. This will avoid some undesired behaviour.
+
+Here I am using and example of `text/plain` mail:
 ```php
 require 'universalphpmailer.class.php';
 
