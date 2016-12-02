@@ -3,7 +3,7 @@
 /**
  * Universal PHP Mailer
  *
- * @version    0.8 (2016-11-27 00:49:00 GMT)
+ * @version    0.8 (2016-11-27 02:23:00 GMT)
  * @author     Peter Kahl <peter.kahl@colossalmind.com>
  * @copyright  2016 Peter Kahl
  * @license    Apache License, Version 2.0
@@ -29,14 +29,14 @@ class universalPHPmailer {
    * Version
    * @var string
    */
-  const VERSION = '0.8';
+  const VERSION = '0.8.1';
 
   /**
    * Method used to send mail
    * @var string
    * Valid values are 'mail', 'smtp'
    */
-  public $mailMethod   = 'mail';
+  public $mailMethod   = 'smtp';
 
   /**
    * Hostname of SMTP server
@@ -207,6 +207,8 @@ class universalPHPmailer {
    */
   const CHARSET = 'utf-8';
 
+  private $smtpSocket;
+
   #===================================================================
 
   public function __construct() {
@@ -214,6 +216,17 @@ class universalPHPmailer {
     $this->inlineImage    = array();
     $this->attachmentKey  = 0;
     $this->attachment     = array();
+    if ($this->mailMethod == 'smtp') {
+      $this->SMTPsocketOpen();
+    }
+  }
+
+  #===================================================================
+
+  public function __destruct() {
+    if ($this->mailMethod == 'smtp') {
+      $this->SMTPsocketClose();
+    }
   }
 
   #===================================================================
@@ -250,16 +263,16 @@ class universalPHPmailer {
 
   #===================================================================
 
-  private function SMTPmail() {
+  private function SMTPsocketOpen() {
     #----------
     $this->appendLog('---------------------------------------------------');
     #----------
-    $smtpConnect = fsockopen($this->SMTPserver, $this->SMTPport, $errno, $errstr, $this->SMTPtimeout);
+    $this->smtpSocket = fsockopen($this->SMTPserver, $this->SMTPport, $errno, $errstr, $this->SMTPtimeout);
     #----------
     $this->appendLog('Connecting to server '.$this->SMTPserver.' on port '.$this->SMTPport);
     #----------
-    $smtpResponse = fgets($smtpConnect, 4096);
-    if (empty($smtpConnect)) {
+    $smtpResponse = fgets($this->smtpSocket, 4096);
+    if (empty($this->smtpSocket)) {
       #----------
       $this->appendLog('Failed to connect: '.trim($smtpResponse));
       #----------
@@ -271,31 +284,32 @@ class universalPHPmailer {
       #----------
     }
 
-    fputs($smtpConnect, 'HELO '. $this->SMTPhelo . self::CRLF);
+    fputs($this->smtpSocket, 'HELO '. $this->SMTPhelo . self::CRLF);
     #----------
     $this->appendLog('OUT: HELO '. $this->SMTPhelo);
     #----------
-    $smtpResponse = fgets($smtpConnect, 4096);
+    $smtpResponse = fgets($this->smtpSocket, 4096);
     #----------
     $this->appendLog('IN:  '.trim($smtpResponse));
     #----------
 
     if ($this->SMTPsecure) {
-      fputs($smtpConnect, 'STARTTLS'. self::CRLF);
+      stream_socket_enable_crypto($this->smtpSocket, true, STREAM_CRYPTO_METHOD_TLSv1_2_CLIENT);
+      fputs($this->smtpSocket, 'STARTTLS'. self::CRLF);
       #----------
       $this->appendLog('OUT: STARTTLS');
       #----------
-      $smtpResponse = fgets($smtpConnect, 4096);
+      $smtpResponse = fgets($this->smtpSocket, 4096);
       #----------
       $this->appendLog('IN:  '.trim($smtpResponse));
       #----------
 
       # Say HELO again after TLS is started
-      fputs($smtpConnect, 'HELO '. $this->SMTPhelo . self::CRLF);
+      fputs($this->smtpSocket, 'HELO '. $this->SMTPhelo . self::CRLF);
       #----------
       $this->appendLog('OUT: HELO '. $this->SMTPhelo);
       #----------
-      $smtpResponse = fgets($smtpConnect, 4096);
+      $smtpResponse = fgets($this->smtpSocket, 4096);
       #----------
       $this->appendLog('IN:  '.trim($smtpResponse));
       #----------
@@ -303,84 +317,97 @@ class universalPHPmailer {
 
     if (!empty($this->SMTPusername) && !empty($this->SMTPpassword)) {
 
-      fputs($smtpConnect, 'AUTH LOGIN' . self::CRLF);
+      fputs($this->smtpSocket, 'AUTH LOGIN' . self::CRLF);
       #----------
       $this->appendLog('OUT: AUTH LOGIN');
       #----------
-      $smtpResponse = fgets($smtpConnect, 4096);
+      $smtpResponse = fgets($this->smtpSocket, 4096);
       #----------
       $this->appendLog('IN:  '.trim($smtpResponse));
       #----------
 
-      fputs($smtpConnect, base64_encode($this->SMTPusername) . self::CRLF);
+      fputs($this->smtpSocket, base64_encode($this->SMTPusername) . self::CRLF);
       #----------
       $this->appendLog('OUT: '.base64_encode($this->SMTPusername));
       #----------
-      $smtpResponse = fgets($smtpConnect, 4096);
+      $smtpResponse = fgets($this->smtpSocket, 4096);
       #----------
       $this->appendLog('IN:  '.trim($smtpResponse));
       #----------
 
-      fputs($smtpConnect, base64_encode($this->SMTPpassword) . self::CRLF);
+      fputs($this->smtpSocket, base64_encode($this->SMTPpassword) . self::CRLF);
       #----------
       $this->appendLog('OUT: '.base64_encode($this->SMTPpassword));
       #----------
-      $smtpResponse = fgets($smtpConnect, 4096);
+      $smtpResponse = fgets($this->smtpSocket, 4096);
       #----------
       $this->appendLog('IN:  '.trim($smtpResponse));
       #----------
 
     }
+  }
 
-    fputs($smtpConnect, 'MAIL FROM: <'. $this->fromEmail .'>'. self::CRLF);
+  #===================================================================
+
+  private function SMTPsocketClose() {
+
+    fputs($this->smtpSocket, 'QUIT'. self::CRLF);
+    #----------
+    $this->appendLog('OUT: QUIT');
+    #----------
+    $smtpResponse = fgets($this->smtpSocket, 4096);
+    #----------
+    $this->appendLog('IN:  '.trim($smtpResponse));
+    #----------
+
+    fclose($this->smtpSocket);
+  }
+
+  #===================================================================
+
+  private function SMTPmail() {
+    #----------
+    $this->appendLog('---------------------------------------------------');
+    #----------
+    fputs($this->smtpSocket, 'MAIL FROM: <'. $this->fromEmail .'>'. self::CRLF);
     #----------
     $this->appendLog('OUT: MAIL FROM: <'. $this->fromEmail .'>');
     #----------
-    $smtpResponse = fgets($smtpConnect, 4096);
+    $smtpResponse = fgets($this->smtpSocket, 4096);
     #----------
     $this->appendLog('IN:  '.trim($smtpResponse));
     #----------
 
-    fputs($smtpConnect, 'RCPT TO: <'. $this->toEmail .'>'. self::CRLF);
+    fputs($this->smtpSocket, 'RCPT TO: <'. $this->toEmail .'>'. self::CRLF);
     #----------
     $this->appendLog('OUT: RCPT TO: <'. $this->toEmail .'>');
     #----------
-    $smtpResponse = fgets($smtpConnect, 4096);
+    $smtpResponse = fgets($this->smtpSocket, 4096);
     #----------
     $this->appendLog('IN:  '.trim($smtpResponse));
     #----------
 
-    fputs($smtpConnect, 'DATA'. self::CRLF);
+    fputs($this->smtpSocket, 'DATA'. self::CRLF);
     #----------
     $this->appendLog('OUT: DATA');
     #----------
-    $smtpResponse = fgets($smtpConnect, 4096);
+    $smtpResponse = fgets($this->smtpSocket, 4096);
     #----------
     $this->appendLog('IN:  '.trim($smtpResponse));
     #----------
 
     # The . after the newline implies the end of message
-    fputs($smtpConnect, implode(self::CRLF, $this->mimeHeaders) . self::CRLF . self::CRLF . rtrim($this->mimeBody) . self::CRLF .'.'. self::CRLF);
+    fputs($this->smtpSocket, implode(self::CRLF, $this->mimeHeaders) . self::CRLF . self::CRLF . $this->mimeBody .'.'. self::CRLF);
     #----------
     $this->appendLog('OUT: [message headers and body]');
     #----------
-    $smtpResponse = fgets($smtpConnect, 4096);
+    $smtpResponse = fgets($this->smtpSocket, 4096);
     #----------
     $this->appendLog('IN:  '.trim($smtpResponse));
     #----------
 
-    fputs($smtpConnect, 'QUIT'. self::CRLF);
-    #----------
-    $this->appendLog('OUT: QUIT');
-    #----------
-    $smtpResponse = fgets($smtpConnect, 4096);
-    #----------
-    $this->appendLog('IN:  '.trim($smtpResponse));
-    #----------
     $code = substr($smtpResponse, 0, 3);
-    fclose($smtpConnect);
-
-    if ($code == '221') {
+    if ($code == '250') {
       return true;
     }
     return false;
