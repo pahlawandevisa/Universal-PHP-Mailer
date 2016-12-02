@@ -3,7 +3,7 @@
 /**
  * Universal PHP Mailer
  *
- * @version    0.7.1 (2016-11-27 23:13:00 GMT)
+ * @version    0.8 (2016-11-27 00:49:00 GMT)
  * @author     Peter Kahl <peter.kahl@colossalmind.com>
  * @copyright  2016 Peter Kahl
  * @license    Apache License, Version 2.0
@@ -29,14 +29,46 @@ class universalPHPmailer {
    * Version
    * @var string
    */
-  const VERSION = '0.7.1';
+  const VERSION = '0.8';
 
   /**
    * Method used to send mail
    * @var string
-   * Valid values are 'mail'; @TODO 'smtp'
+   * Valid values are 'mail', 'smtp'
    */
-  public $mailMethod = 'mail';
+  public $mailMethod   = 'mail';
+
+  /**
+   * Hostname of SMTP server
+   * @var string
+   * For local SMTP server, try 'localhost'.
+   * For secure connection, use 'tls://smtp.example.tld' or 'ssl://smtp.example.tld'
+   */
+  public $SMTPserver   = 'localhost';
+
+  public $SMTPport     = '25';
+
+  public $SMTPtimeout  = '30';
+
+  public $SMTPusername = '';
+
+  public $SMTPpassword = '';
+
+  /**
+   * Hostname for SMTP HELO
+   * @var string
+   * This should be FQDN, or if you use
+   * IP address, it must be in square braces.
+   */
+  public $SMTPhelo     = '[127.0.0.1]';
+
+  public $SMTPsecure   = false;
+
+  public $SMTPlogFilename = '/SMTP.log';
+
+  public $cacheDir = '/srv/cache';
+
+  public $SMTPloggingEnable = true;
 
   /**
    * Recipeint's display name
@@ -164,7 +196,7 @@ class universalPHPmailer {
    * https://tools.ietf.org/html/rfc5322.html#section-2.1.1
    * @var integer
    */
-  const WRAP_LEN = 78;
+  const WRAP_LEN = 76;
   const LINE_LEN_MAX = 998;
 
   const CRLF = "\r\n";
@@ -188,33 +220,187 @@ class universalPHPmailer {
 
   public function sendMessage() {
 
-    $this->mimeHeaders    = array();
-    $this->mimeBody       = '';
-
     $this->composeMessage();
 
+    #-----------------------------------
     if ($this->mailMethod == 'mail') {
       $to      = preg_replace('/^To:\s/', '', $this->encodeNameHeader('To', $this->toName, $this->toEmail));
       $subject = preg_replace('/^Subject:\s/', '', $this->encodeHeader('Subject', $this->subject));
       $headers = implode(self::CRLF, $this->mimeHeaders).self::CRLF;
+      #----
+      if (empty($this->returnPath)) {
+        $this->returnPath = $this->fromEmail;
+      }
       #----
       if (mail($to, $subject, $this->mimeBody, $headers, '-f'.$this->returnPath) !== false) {
         return $this->messageId; # On success returns message ID.
       }
       return false;
     }
-    #----
+    #-----------------------------------
     if ($this->mailMethod == 'smtp') {
-      $mailStr = implode(self::CRLF, $this->mimeHeaders) . self::CRLF . $this->mimeBody;
-      throw new Exception('mailMethod value smtp is not yet available');
+      if ($this->SMTPmail()) {
+        return $this->messageId; # On success returns message ID.
+      }
+      return false;
     }
-    #----
+    #-----------------------------------
     throw new Exception('Illegal value of property mailMethod');
   }
 
   #===================================================================
 
+  private function SMTPmail() {
+    #----------
+    $this->appendLog('---------------------------------------------------');
+    #----------
+    $smtpConnect = fsockopen($this->SMTPserver, $this->SMTPport, $errno, $errstr, $this->SMTPtimeout);
+    #----------
+    $this->appendLog('Connecting to server '.$this->SMTPserver.' on port '.$this->SMTPport);
+    #----------
+    $smtpResponse = fgets($smtpConnect, 4096);
+    if (empty($smtpConnect)) {
+      #----------
+      $this->appendLog('Failed to connect: '.trim($smtpResponse));
+      #----------
+      return false;
+    }
+    else {
+      #----------
+      $this->appendLog('IN:  '.trim($smtpResponse));
+      #----------
+    }
+
+    fputs($smtpConnect, 'HELO '. $this->SMTPhelo . self::CRLF);
+    #----------
+    $this->appendLog('OUT: HELO '. $this->SMTPhelo);
+    #----------
+    $smtpResponse = fgets($smtpConnect, 4096);
+    #----------
+    $this->appendLog('IN:  '.trim($smtpResponse));
+    #----------
+
+    if ($this->SMTPsecure) {
+      fputs($smtpConnect, 'STARTTLS'. self::CRLF);
+      #----------
+      $this->appendLog('OUT: STARTTLS');
+      #----------
+      $smtpResponse = fgets($smtpConnect, 4096);
+      #----------
+      $this->appendLog('IN:  '.trim($smtpResponse));
+      #----------
+
+      # Say HELO again after TLS is started
+      fputs($smtpConnect, 'HELO '. $this->SMTPhelo . self::CRLF);
+      #----------
+      $this->appendLog('OUT: HELO '. $this->SMTPhelo);
+      #----------
+      $smtpResponse = fgets($smtpConnect, 4096);
+      #----------
+      $this->appendLog('IN:  '.trim($smtpResponse));
+      #----------
+    }
+
+    if (!empty($this->SMTPusername) && !empty($this->SMTPpassword)) {
+
+      fputs($smtpConnect, 'AUTH LOGIN' . self::CRLF);
+      #----------
+      $this->appendLog('OUT: AUTH LOGIN');
+      #----------
+      $smtpResponse = fgets($smtpConnect, 4096);
+      #----------
+      $this->appendLog('IN:  '.trim($smtpResponse));
+      #----------
+
+      fputs($smtpConnect, base64_encode($this->SMTPusername) . self::CRLF);
+      #----------
+      $this->appendLog('OUT: '.base64_encode($this->SMTPusername));
+      #----------
+      $smtpResponse = fgets($smtpConnect, 4096);
+      #----------
+      $this->appendLog('IN:  '.trim($smtpResponse));
+      #----------
+
+      fputs($smtpConnect, base64_encode($this->SMTPpassword) . self::CRLF);
+      #----------
+      $this->appendLog('OUT: '.base64_encode($this->SMTPpassword));
+      #----------
+      $smtpResponse = fgets($smtpConnect, 4096);
+      #----------
+      $this->appendLog('IN:  '.trim($smtpResponse));
+      #----------
+
+    }
+
+    fputs($smtpConnect, 'MAIL FROM: <'. $this->fromEmail .'>'. self::CRLF);
+    #----------
+    $this->appendLog('OUT: MAIL FROM: <'. $this->fromEmail .'>');
+    #----------
+    $smtpResponse = fgets($smtpConnect, 4096);
+    #----------
+    $this->appendLog('IN:  '.trim($smtpResponse));
+    #----------
+
+    fputs($smtpConnect, 'RCPT TO: <'. $this->toEmail .'>'. self::CRLF);
+    #----------
+    $this->appendLog('OUT: RCPT TO: <'. $this->toEmail .'>');
+    #----------
+    $smtpResponse = fgets($smtpConnect, 4096);
+    #----------
+    $this->appendLog('IN:  '.trim($smtpResponse));
+    #----------
+
+    fputs($smtpConnect, 'DATA'. self::CRLF);
+    #----------
+    $this->appendLog('OUT: DATA');
+    #----------
+    $smtpResponse = fgets($smtpConnect, 4096);
+    #----------
+    $this->appendLog('IN:  '.trim($smtpResponse));
+    #----------
+
+    # The . after the newline implies the end of message
+    fputs($smtpConnect, implode(self::CRLF, $this->mimeHeaders) . self::CRLF . self::CRLF . rtrim($this->mimeBody) . self::CRLF .'.'. self::CRLF);
+    #----------
+    $this->appendLog('OUT: [message headers and body]');
+    #----------
+    $smtpResponse = fgets($smtpConnect, 4096);
+    #----------
+    $this->appendLog('IN:  '.trim($smtpResponse));
+    #----------
+
+    fputs($smtpConnect, 'QUIT'. self::CRLF);
+    #----------
+    $this->appendLog('OUT: QUIT');
+    #----------
+    $smtpResponse = fgets($smtpConnect, 4096);
+    #----------
+    $this->appendLog('IN:  '.trim($smtpResponse));
+    #----------
+    $code = substr($smtpResponse, 0, 3);
+    fclose($smtpConnect);
+
+    if ($code == '221') {
+      return true;
+    }
+    return false;
+  }
+
+  #===================================================================
+
+  public function appendLog($str) {
+    if (!$this->SMTPloggingEnable) {
+      return;
+    }
+    file_put_contents($this->cacheDir . $this->SMTPlogFilename, '['.date("Y-m-d H:i:s").'] '. $str . PHP_EOL, FILE_APPEND | LOCK_EX);
+  }
+
+  #===================================================================
+
   private function composeMessage() {
+
+    $this->mimeHeaders    = array();
+    $this->mimeBody       = '';
 
     $this->rbstr = false;
     $this->setEncoding();
@@ -400,11 +586,6 @@ class universalPHPmailer {
       else {
         throw new Exception('There\'s no content');
       }
-    }
-    #---------------------------------------------------
-
-    if (empty($this->returnPath)) {
-      $this->returnPath = $this->fromEmail;
     }
   }
 
@@ -653,15 +834,12 @@ class universalPHPmailer {
    * https://tools.ietf.org/html/rfc2047
    *
    */
-  private function encodeRFC2047($str, $scheme = 'b', $charset = '') {
-    if (empty($charset)) {
-      $charset = self::CHARSET;
-    }
+  private function encodeRFC2047($str, $scheme = 'b') {
     if (strtolower($scheme) == 'b') {
-      return '=?'.$charset.'?B?'.base64_encode($str).'?=';
+      return '=?'.self::CHARSET.'?B?'.base64_encode($str).'?=';
     }
     if (strtolower($scheme) == 'q') {
-      return '=?'.$charset.'?Q?'.str_replace(array(' ','?','_'), array('=20','=3F','=5F'), quoted_printable_encode($str)).'?=';
+      return '=?'.self::CHARSET.'?Q?'.str_replace(array(' ','?','_'), array('=20','=3F','=5F'), quoted_printable_encode($str)).'?=';
     }
     throw new Exception('Illegal value of argument scheme');
   }
@@ -755,6 +933,15 @@ class universalPHPmailer {
       return $this->mimeType[$ext][0];
     }
     throw new Exception('Unknown mime type for given extension');
+  }
+
+  #===================================================================
+
+  public function appendLog($str) {
+    if (!$this->SMTPloggingEnable) {
+      return;
+    }
+    file_put_contents($this->cacheDir . $this->SMTPlogFilename, '['.date("Y-m-d H:i:s").'] '. $str . PHP_EOL, FILE_APPEND | LOCK_EX);
   }
 
   #===================================================================
