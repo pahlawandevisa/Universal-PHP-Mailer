@@ -3,7 +3,7 @@
 /**
  * Universal PHP Mailer
  *
- * @version    0.8 (2016-11-27 02:23:00 GMT)
+ * @version    0.8.1 (2016-11-27 02:23:00 GMT)
  * @author     Peter Kahl <peter.kahl@colossalmind.com>
  * @copyright  2016 Peter Kahl
  * @license    Apache License, Version 2.0
@@ -263,6 +263,56 @@ class universalPHPmailer {
 
   #===================================================================
 
+  private function SMTPmail() {
+    #----------
+    $this->appendLog('---------------------------------------------------');
+    #----------
+    fputs($this->smtpSocket, 'MAIL FROM: <'. $this->fromEmail .'>'. self::CRLF);
+    #----------
+    $this->appendLog('OUT: MAIL FROM: <'. $this->fromEmail .'>');
+    #----------
+    $smtpResponse = fgets($this->smtpSocket, 4096);
+    #----------
+    $this->appendLog('IN:  '.trim($smtpResponse));
+    #----------
+
+    fputs($this->smtpSocket, 'RCPT TO: <'. $this->toEmail .'>'. self::CRLF);
+    #----------
+    $this->appendLog('OUT: RCPT TO: <'. $this->toEmail .'>');
+    #----------
+    $smtpResponse = fgets($this->smtpSocket, 4096);
+    #----------
+    $this->appendLog('IN:  '.trim($smtpResponse));
+    #----------
+
+    fputs($this->smtpSocket, 'DATA'. self::CRLF);
+    #----------
+    $this->appendLog('OUT: DATA');
+    #----------
+    $smtpResponse = fgets($this->smtpSocket, 4096);
+    #----------
+    $this->appendLog('IN:  '.trim($smtpResponse));
+    #----------
+
+    # The . after the newline implies the end of message
+    fputs($this->smtpSocket, implode(self::CRLF, $this->mimeHeaders) . self::CRLF . self::CRLF . $this->mimeBody .'.'. self::CRLF);
+    #----------
+    $this->appendLog('OUT: [message headers and body]');
+    #----------
+    $smtpResponse = fgets($this->smtpSocket, 4096);
+    #----------
+    $this->appendLog('IN:  '.trim($smtpResponse));
+    #----------
+
+    $code = substr($smtpResponse, 0, 3);
+    if ($code == '250') {
+      return true;
+    }
+    return false;
+  }
+
+  #===================================================================
+
   private function SMTPsocketOpen() {
     #----------
     $this->appendLog('---------------------------------------------------');
@@ -350,7 +400,9 @@ class universalPHPmailer {
   #===================================================================
 
   private function SMTPsocketClose() {
-
+    #----------
+    $this->appendLog('---------------------------------------------------');
+    #----------
     fputs($this->smtpSocket, 'QUIT'. self::CRLF);
     #----------
     $this->appendLog('OUT: QUIT');
@@ -361,56 +413,6 @@ class universalPHPmailer {
     #----------
 
     fclose($this->smtpSocket);
-  }
-
-  #===================================================================
-
-  private function SMTPmail() {
-    #----------
-    $this->appendLog('---------------------------------------------------');
-    #----------
-    fputs($this->smtpSocket, 'MAIL FROM: <'. $this->fromEmail .'>'. self::CRLF);
-    #----------
-    $this->appendLog('OUT: MAIL FROM: <'. $this->fromEmail .'>');
-    #----------
-    $smtpResponse = fgets($this->smtpSocket, 4096);
-    #----------
-    $this->appendLog('IN:  '.trim($smtpResponse));
-    #----------
-
-    fputs($this->smtpSocket, 'RCPT TO: <'. $this->toEmail .'>'. self::CRLF);
-    #----------
-    $this->appendLog('OUT: RCPT TO: <'. $this->toEmail .'>');
-    #----------
-    $smtpResponse = fgets($this->smtpSocket, 4096);
-    #----------
-    $this->appendLog('IN:  '.trim($smtpResponse));
-    #----------
-
-    fputs($this->smtpSocket, 'DATA'. self::CRLF);
-    #----------
-    $this->appendLog('OUT: DATA');
-    #----------
-    $smtpResponse = fgets($this->smtpSocket, 4096);
-    #----------
-    $this->appendLog('IN:  '.trim($smtpResponse));
-    #----------
-
-    # The . after the newline implies the end of message
-    fputs($this->smtpSocket, implode(self::CRLF, $this->mimeHeaders) . self::CRLF . self::CRLF . $this->mimeBody .'.'. self::CRLF);
-    #----------
-    $this->appendLog('OUT: [message headers and body]');
-    #----------
-    $smtpResponse = fgets($this->smtpSocket, 4096);
-    #----------
-    $this->appendLog('IN:  '.trim($smtpResponse));
-    #----------
-
-    $code = substr($smtpResponse, 0, 3);
-    if ($code == '250') {
-      return true;
-    }
-    return false;
   }
 
   #===================================================================
