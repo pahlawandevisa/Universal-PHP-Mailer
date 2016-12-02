@@ -1,5 +1,5 @@
 # Universal PHP Mailer
-Super simple yet powerful PHP mailer. At the moment, it's a wrapper for the PHP `mail()` function, but the plan is to expand to the `SMTP` method.
+Super simple yet powerful PHP mailer. It can use the PHP `mail()` function or the `SMTP` method to use local or remote SMTP server.
 
 This mailer is capable of sending anything. You can use it to send very simple mail and even some very complex content combinations. Just give it whatever you have and fire it off! It will automatically configure itself to compose the correct MIME mail string with whatever parts are appropriate.
 
