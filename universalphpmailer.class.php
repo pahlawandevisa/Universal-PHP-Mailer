@@ -388,15 +388,6 @@ class universalPHPmailer {
 
   #===================================================================
 
-  public function appendLog($str) {
-    if (!$this->SMTPloggingEnable) {
-      return;
-    }
-    file_put_contents($this->cacheDir . $this->SMTPlogFilename, '['.date("Y-m-d H:i:s").'] '. $str . PHP_EOL, FILE_APPEND | LOCK_EX);
-  }
-
-  #===================================================================
-
   private function composeMessage() {
 
     $this->mimeHeaders    = array();
