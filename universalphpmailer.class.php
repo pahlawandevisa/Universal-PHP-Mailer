@@ -3,7 +3,7 @@
 /**
  * Universal PHP Mailer
  *
- * @version    0.8.1 (2016-11-27 02:23:00 GMT)
+ * @version    0.8.2 (2016-11-27 23:26:00 GMT)
  * @author     Peter Kahl <peter.kahl@colossalmind.com>
  * @copyright  2016 Peter Kahl
  * @license    Apache License, Version 2.0
@@ -29,7 +29,7 @@ class universalPHPmailer {
    * Version
    * @var string
    */
-  const VERSION = '0.8.1';
+  const VERSION = '0.8.2';
 
   /**
    * Method used to send mail
@@ -42,17 +42,12 @@ class universalPHPmailer {
    * Hostname of SMTP server
    * @var string
    * For local SMTP server, try 'localhost'.
-   * For secure connection, use 'tls://smtp.example.tld' or 'ssl://smtp.example.tld'
    */
   public $SMTPserver   = 'localhost';
 
   public $SMTPport     = '25';
 
   public $SMTPtimeout  = '30';
-
-  public $SMTPusername = '';
-
-  public $SMTPpassword = '';
 
   /**
    * Hostname for SMTP HELO
@@ -61,8 +56,6 @@ class universalPHPmailer {
    * IP address, it must be in square braces.
    */
   public $SMTPhelo     = '[127.0.0.1]';
-
-  public $SMTPsecure   = false;
 
   public $SMTPlogFilename = '/SMTP.log';
 
@@ -216,15 +209,12 @@ class universalPHPmailer {
     $this->inlineImage    = array();
     $this->attachmentKey  = 0;
     $this->attachment     = array();
-    if ($this->mailMethod == 'smtp') {
-      $this->SMTPsocketOpen();
-    }
   }
 
   #===================================================================
 
   public function __destruct() {
-    if ($this->mailMethod == 'smtp') {
+    if ($this->mailMethod == 'smtp' && $this->isConnectionOpen()) {
       $this->SMTPsocketClose();
     }
   }
@@ -232,6 +222,10 @@ class universalPHPmailer {
   #===================================================================
 
   public function sendMessage() {
+
+    if ($this->mailMethod == 'smtp' && !$this->isConnectionOpen()) {
+      $this->SMTPsocketOpen();
+    }
 
     $this->composeMessage();
 
@@ -315,9 +309,9 @@ class universalPHPmailer {
 
   private function SMTPsocketOpen() {
     #----------
-    $this->appendLog('---------------------------------------------------');
+    $this->appendLog('===================================================');
     #----------
-    $this->smtpSocket = fsockopen($this->SMTPserver, $this->SMTPport, $errno, $errstr, $this->SMTPtimeout);
+    $this->smtpSocket = stream_socket_client($this->SMTPserver.':'.$this->SMTPport, $errno, $errstr);
     #----------
     $this->appendLog('Connecting to server '.$this->SMTPserver.' on port '.$this->SMTPport);
     #----------
@@ -342,59 +336,6 @@ class universalPHPmailer {
     #----------
     $this->appendLog('IN:  '.trim($smtpResponse));
     #----------
-
-    if ($this->SMTPsecure) {
-      stream_socket_enable_crypto($this->smtpSocket, true, STREAM_CRYPTO_METHOD_TLSv1_2_CLIENT);
-      fputs($this->smtpSocket, 'STARTTLS'. self::CRLF);
-      #----------
-      $this->appendLog('OUT: STARTTLS');
-      #----------
-      $smtpResponse = fgets($this->smtpSocket, 4096);
-      #----------
-      $this->appendLog('IN:  '.trim($smtpResponse));
-      #----------
-
-      # Say HELO again after TLS is started
-      fputs($this->smtpSocket, 'HELO '. $this->SMTPhelo . self::CRLF);
-      #----------
-      $this->appendLog('OUT: HELO '. $this->SMTPhelo);
-      #----------
-      $smtpResponse = fgets($this->smtpSocket, 4096);
-      #----------
-      $this->appendLog('IN:  '.trim($smtpResponse));
-      #----------
-    }
-
-    if (!empty($this->SMTPusername) && !empty($this->SMTPpassword)) {
-
-      fputs($this->smtpSocket, 'AUTH LOGIN' . self::CRLF);
-      #----------
-      $this->appendLog('OUT: AUTH LOGIN');
-      #----------
-      $smtpResponse = fgets($this->smtpSocket, 4096);
-      #----------
-      $this->appendLog('IN:  '.trim($smtpResponse));
-      #----------
-
-      fputs($this->smtpSocket, base64_encode($this->SMTPusername) . self::CRLF);
-      #----------
-      $this->appendLog('OUT: '.base64_encode($this->SMTPusername));
-      #----------
-      $smtpResponse = fgets($this->smtpSocket, 4096);
-      #----------
-      $this->appendLog('IN:  '.trim($smtpResponse));
-      #----------
-
-      fputs($this->smtpSocket, base64_encode($this->SMTPpassword) . self::CRLF);
-      #----------
-      $this->appendLog('OUT: '.base64_encode($this->SMTPpassword));
-      #----------
-      $smtpResponse = fgets($this->smtpSocket, 4096);
-      #----------
-      $this->appendLog('IN:  '.trim($smtpResponse));
-      #----------
-
-    }
   }
 
   #===================================================================
@@ -413,6 +354,21 @@ class universalPHPmailer {
     #----------
 
     fclose($this->smtpSocket);
+    $this->smtpSocket = null;
+  }
+
+  #===================================================================
+
+  private function isConnectionOpen() {
+    if (is_resource($this->smtpSocket)) {
+      $status = stream_get_meta_data($this->smtpSocket);
+      if ($status['eof']) {
+        $this->SMTPsocketClose();
+        return false;
+      }
+      return true;
+    }
+    return false;
   }
 
   #===================================================================
