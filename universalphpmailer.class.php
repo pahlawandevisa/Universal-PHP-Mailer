@@ -3,7 +3,7 @@
 /**
  * Universal PHP Mailer
  *
- * @version    0.8.2 (2016-11-27 23:26:00 GMT)
+ * @version    0.8.3 (2016-12-04 06:39:00 GMT)
  * @author     Peter Kahl <peter.kahl@colossalmind.com>
  * @copyright  2016 Peter Kahl
  * @license    Apache License, Version 2.0
@@ -29,7 +29,7 @@ class universalPHPmailer {
    * Version
    * @var string
    */
-  const VERSION = '0.8.2';
+  const VERSION = '0.8.3';
 
   /**
    * Method used to send mail
@@ -202,6 +202,12 @@ class universalPHPmailer {
 
   private $smtpSocket;
 
+  private $EpochSocketOpened;
+
+  private $CounterSuccess;
+
+  private $CounterFail;
+
   #===================================================================
 
   public function __construct() {
@@ -224,7 +230,9 @@ class universalPHPmailer {
   public function sendMessage() {
 
     if ($this->mailMethod == 'smtp' && !$this->isConnectionOpen()) {
-      $this->SMTPsocketOpen();
+      if (!$this->SMTPsocketOpen()) {
+        return false; # Failed to connect
+      }
     }
 
     $this->composeMessage();
@@ -267,7 +275,7 @@ class universalPHPmailer {
     #----------
     $smtpResponse = fgets($this->smtpSocket, 4096);
     #----------
-    $this->appendLog('IN:  '.trim($smtpResponse));
+    $this->appendLog('IN:  '.$smtpResponse);
     #----------
 
     fputs($this->smtpSocket, 'RCPT TO: <'. $this->toEmail .'>'. self::CRLF);
@@ -276,7 +284,7 @@ class universalPHPmailer {
     #----------
     $smtpResponse = fgets($this->smtpSocket, 4096);
     #----------
-    $this->appendLog('IN:  '.trim($smtpResponse));
+    $this->appendLog('IN:  '.$smtpResponse);
     #----------
 
     fputs($this->smtpSocket, 'DATA'. self::CRLF);
@@ -285,7 +293,7 @@ class universalPHPmailer {
     #----------
     $smtpResponse = fgets($this->smtpSocket, 4096);
     #----------
-    $this->appendLog('IN:  '.trim($smtpResponse));
+    $this->appendLog('IN:  '.$smtpResponse);
     #----------
 
     # The . after the newline implies the end of message
@@ -295,38 +303,46 @@ class universalPHPmailer {
     #----------
     $smtpResponse = fgets($this->smtpSocket, 4096);
     #----------
-    $this->appendLog('IN:  '.trim($smtpResponse));
+    $this->appendLog('IN:  '.$smtpResponse);
     #----------
 
     $code = substr($smtpResponse, 0, 3);
     if ($code == '250') {
+      $this->CounterSuccess++;
       return true;
     }
+    $this->CounterFail++;
     return false;
   }
 
   #===================================================================
 
   private function SMTPsocketOpen() {
-    #----------
+    # Start the stopwatch, counters.
+    $this->EpochSocketOpened = microtime(true);
+    $this->CounterSuccess = 0;
+    $this->CounterFail = 0;
+
     $this->appendLog('===================================================');
+
+    $context = stream_context_create();
+
     #----------
-    $this->smtpSocket = stream_socket_client($this->SMTPserver.':'.$this->SMTPport, $errno, $errstr);
+    $this->smtpSocket = stream_socket_client($this->SMTPserver.':'.$this->SMTPport, $errno, $errstr, $this->SMTPtimeout, STREAM_CLIENT_CONNECT, $context);
     #----------
     $this->appendLog('Connecting to server '.$this->SMTPserver.' on port '.$this->SMTPport);
     #----------
-    $smtpResponse = fgets($this->smtpSocket, 4096);
-    if (empty($this->smtpSocket)) {
+    if (!is_resource($this->smtpSocket)) {
       #----------
-      $this->appendLog('Failed to connect: '.trim($smtpResponse));
+      $this->appendLog('Failed to connect; '.$errno.'; '.$errstr);
       #----------
       return false;
     }
-    else {
-      #----------
-      $this->appendLog('IN:  '.trim($smtpResponse));
-      #----------
-    }
+    #----------
+    $smtpResponse = fgets($this->smtpSocket, 4096);
+    #----------
+    $this->appendLog('IN:  '.$smtpResponse);
+    #----------
 
     fputs($this->smtpSocket, 'HELO '. $this->SMTPhelo . self::CRLF);
     #----------
@@ -334,8 +350,10 @@ class universalPHPmailer {
     #----------
     $smtpResponse = fgets($this->smtpSocket, 4096);
     #----------
-    $this->appendLog('IN:  '.trim($smtpResponse));
+    $this->appendLog('IN:  '.$smtpResponse);
     #----------
+
+    return true; # Successfully connected to server.
   }
 
   #===================================================================
@@ -350,11 +368,18 @@ class universalPHPmailer {
     #----------
     $smtpResponse = fgets($this->smtpSocket, 4096);
     #----------
-    $this->appendLog('IN:  '.trim($smtpResponse));
+    $this->appendLog('IN:  '.$smtpResponse);
+    #----------
+    $this->appendLog('---------------------------------------------------');
+    #----------
+    $this->appendLog('MESSAGES-SENT: '.$this->CounterSuccess.'; MESSAGES-FAILED: '.$this->CounterFail.'; CONNECT-TIME: '.$this->benchmark($this->EpochSocketOpened));
     #----------
 
     fclose($this->smtpSocket);
     $this->smtpSocket = null;
+    $this->EpochSocketOpened = null;
+    $this->CounterSuccess = null;
+    $this->CounterFail = null;
   }
 
   #===================================================================
@@ -917,7 +942,27 @@ class universalPHPmailer {
     if (!$this->SMTPloggingEnable) {
       return;
     }
-    file_put_contents($this->cacheDir . $this->SMTPlogFilename, '['.date("Y-m-d H:i:s").'] '. $str . PHP_EOL, FILE_APPEND | LOCK_EX);
+    file_put_contents($this->cacheDir . $this->SMTPlogFilename, '['.date("Y-m-d H:i:s").'] '. trim($str) . PHP_EOL, FILE_APPEND | LOCK_EX);
+  }
+
+  #===================================================================
+
+  /**
+   * Measure time.
+   *
+   * @return string
+   */
+  private function benchmark($st) {
+    $val = (microtime(true) - $st);
+    if ($val >= 1) {
+      return number_format($val, 2, '.', ',').' sec';
+    }
+    $val = $val * 1000;
+    if ($val >= 1) {
+      return number_format($val, 2, '.', ',').' msec';
+    }
+    $val = $val * 1000;
+    return number_format($val, 2, '.', ',').' μsec';
   }
 
   #===================================================================
