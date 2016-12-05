@@ -3,7 +3,7 @@
 /**
  * Universal PHP Mailer
  *
- * @version    0.8.3 (2016-12-04 06:39:00 GMT)
+ * @version    0.8.4 (2016-12-05 04:37:00 GMT)
  * @author     Peter Kahl <peter.kahl@colossalmind.com>
  * @copyright  2016 Peter Kahl
  * @license    Apache License, Version 2.0
@@ -29,7 +29,7 @@ class universalPHPmailer {
    * Version
    * @var string
    */
-  const VERSION = '0.8.3';
+  const VERSION = '0.8.4';
 
   /**
    * Method used to send mail
@@ -54,6 +54,9 @@ class universalPHPmailer {
    * @var string
    * This should be FQDN, or if you use
    * IP address, it must be in square braces.
+   * If you are connecting to an external SMTP server, it may be necessary
+   * to use your actual FQDN that is FcRDNS.
+   * May need to be RFC2821 compliant.
    */
   public $SMTPhelo     = '[127.0.0.1]';
 
@@ -61,6 +64,11 @@ class universalPHPmailer {
 
   public $cacheDir = '/srv/cache';
 
+  /**
+   * Enable logging (for debugging).
+   * @var boolean
+   * Consider disabling for better performance.
+   */
   public $SMTPloggingEnable = true;
 
   /**
@@ -269,39 +277,39 @@ class universalPHPmailer {
     #----------
     $this->appendLog('---------------------------------------------------');
     #----------
-    fputs($this->smtpSocket, 'MAIL FROM: <'. $this->fromEmail .'>'. self::CRLF);
+    fwrite($this->smtpSocket, 'MAIL FROM: <'. $this->fromEmail .'>'. self::CRLF);
     #----------
     $this->appendLog('OUT: MAIL FROM: <'. $this->fromEmail .'>');
     #----------
-    $smtpResponse = fgets($this->smtpSocket, 4096);
+    $smtpResponse = $this->readLines();
     #----------
     $this->appendLog('IN:  '.$smtpResponse);
     #----------
 
-    fputs($this->smtpSocket, 'RCPT TO: <'. $this->toEmail .'>'. self::CRLF);
+    fwrite($this->smtpSocket, 'RCPT TO: <'. $this->toEmail .'>'. self::CRLF);
     #----------
     $this->appendLog('OUT: RCPT TO: <'. $this->toEmail .'>');
     #----------
-    $smtpResponse = fgets($this->smtpSocket, 4096);
+    $smtpResponse = $this->readLines();
     #----------
     $this->appendLog('IN:  '.$smtpResponse);
     #----------
 
-    fputs($this->smtpSocket, 'DATA'. self::CRLF);
+    fwrite($this->smtpSocket, 'DATA'. self::CRLF);
     #----------
     $this->appendLog('OUT: DATA');
     #----------
-    $smtpResponse = fgets($this->smtpSocket, 4096);
+    $smtpResponse = $this->readLines();
     #----------
     $this->appendLog('IN:  '.$smtpResponse);
     #----------
 
     # The . after the newline implies the end of message
-    fputs($this->smtpSocket, implode(self::CRLF, $this->mimeHeaders) . self::CRLF . self::CRLF . $this->mimeBody .'.'. self::CRLF);
+    fwrite($this->smtpSocket, implode(self::CRLF, $this->mimeHeaders) . self::CRLF . self::CRLF . $this->mimeBody .'.'. self::CRLF);
     #----------
     $this->appendLog('OUT: [message headers and body]');
     #----------
-    $smtpResponse = fgets($this->smtpSocket, 4096);
+    $smtpResponse = $this->readLines();
     #----------
     $this->appendLog('IN:  '.$smtpResponse);
     #----------
@@ -313,6 +321,19 @@ class universalPHPmailer {
     }
     $this->CounterFail++;
     return false;
+  }
+
+  #===================================================================
+
+  private function readLines() {
+    $data = '';
+    while (is_resource($this->smtpSocket) && !feof($this->smtpSocket)) {
+      $str = @fgets($this->smtpSocket, 515);$data .= $str;
+      if ((isset($str[3]) and $str[3] == ' ')) {
+        break;
+      }
+    }
+    return $data;
   }
 
   #===================================================================
@@ -339,16 +360,16 @@ class universalPHPmailer {
       return false;
     }
     #----------
-    $smtpResponse = fgets($this->smtpSocket, 4096);
+    $smtpResponse = $this->readLines();
     #----------
     $this->appendLog('IN:  '.$smtpResponse);
     #----------
 
-    fputs($this->smtpSocket, 'HELO '. $this->SMTPhelo . self::CRLF);
+    fwrite($this->smtpSocket, 'HELO '. $this->SMTPhelo . self::CRLF);
     #----------
     $this->appendLog('OUT: HELO '. $this->SMTPhelo);
     #----------
-    $smtpResponse = fgets($this->smtpSocket, 4096);
+    $smtpResponse = $this->readLines();
     #----------
     $this->appendLog('IN:  '.$smtpResponse);
     #----------
@@ -362,11 +383,11 @@ class universalPHPmailer {
     #----------
     $this->appendLog('---------------------------------------------------');
     #----------
-    fputs($this->smtpSocket, 'QUIT'. self::CRLF);
+    fwrite($this->smtpSocket, 'QUIT'. self::CRLF);
     #----------
     $this->appendLog('OUT: QUIT');
     #----------
-    $smtpResponse = fgets($this->smtpSocket, 4096);
+    $smtpResponse = $this->readLines();
     #----------
     $this->appendLog('IN:  '.$smtpResponse);
     #----------
@@ -400,8 +421,8 @@ class universalPHPmailer {
 
   private function composeMessage() {
 
-    $this->mimeHeaders    = array();
-    $this->mimeBody       = '';
+    $this->mimeHeaders = array();
+    $this->mimeBody    = '';
 
     $this->rbstr = false;
     $this->setEncoding();
