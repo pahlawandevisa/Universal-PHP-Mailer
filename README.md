@@ -289,9 +289,14 @@ if (!empty($msgID)) {
 
 Peter Kahl had written much of the SMTP-related methods of this package as a result of inspiration from the following class and extends his thanks to the authors thereof:
 
-PHPMailer RFC821 SMTP email transport class.
-Implements RFC 821 SMTP commands and provides some utility methods for sending mail to an SMTP server.
-@package PHPMailer
-@author Chris Ryan
-@author Marcus Bointon <phpmailer@synchromedia.co.uk>
-<https://github.com/PHPMailer/PHPMailer/blob/master/class.smtp.php>
+> PHPMailer RFC821 SMTP email transport class.
+>
+> Implements RFC 821 SMTP commands and provides some utility methods for sending mail to an SMTP server.
+>
+> @package PHPMailer
+>
+> @author Chris Ryan
+>
+> @author Marcus Bointon <phpmailer@synchromedia.co.uk>
+>
+> <https://github.com/PHPMailer/PHPMailer/blob/master/class.smtp.php>
