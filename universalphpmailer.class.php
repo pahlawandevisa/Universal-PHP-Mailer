@@ -3,7 +3,7 @@
 /**
  * Universal PHP Mailer
  *
- * @version    0.9 (2016-12-07 00:34:00 GMT)
+ * @version    0.9.1 (2016-12-07 08:06:00 GMT)
  * @author     Peter Kahl <peter.kahl@colossalmind.com>
  * @copyright  2016 Peter Kahl
  * @license    Apache License, Version 2.0
@@ -40,7 +40,7 @@ class universalPHPmailer {
    * Version
    * @var string
    */
-  const VERSION = '0.9';
+  const VERSION = '0.9.1';
 
   /**
    * Method used to send mail
@@ -310,9 +310,7 @@ class universalPHPmailer {
         if ($this->isCapable('SIZE')) {
           $len = strlen($this->mailString);
           if ($len > $this->SMTPextensions['SIZE']) {
-            # Message string exceeds remote server's limit
             $this->appendLog('Message size '.$len.' exceeds server\'s limit of '.$this->SMTPextensions['SIZE'].' bytes.');
-            $this->sendCommand('RSET', 250);
             $this->CounterFail++;
             return false;
           }
@@ -590,13 +588,13 @@ class universalPHPmailer {
 
   private function sendCommand($commandstring, $expect) {
 
-    $this->appendLog('OUT: '.$commandstring);
+    $this->appendLog('>>> '.$commandstring);
 
     fwrite($this->SMTPsocket, $commandstring . self::CRLF);
 
     $this->last_reply = $this->get_lines();
 
-    $this->appendLog('IN:  '.$this->last_reply);
+    $this->appendLog('<<< '.$this->last_reply);
 
     $code = substr($this->last_reply, 0, 3);
 
