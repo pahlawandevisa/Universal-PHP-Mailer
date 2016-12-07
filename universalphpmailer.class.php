@@ -3,7 +3,7 @@
 /**
  * Universal PHP Mailer
  *
- * @version    0.8.4 (2016-12-05 04:37:00 GMT)
+ * @version    0.9 (2016-12-07 00:34:00 GMT)
  * @author     Peter Kahl <peter.kahl@colossalmind.com>
  * @copyright  2016 Peter Kahl
  * @license    Apache License, Version 2.0
@@ -21,6 +21,17 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
+ * Peter Kahl had written much of the SMTP-related methods of this
+ * package as a result of inspiration from the following class and
+ * extends his thanks to the authors thereof:
+ *
+ * PHPMailer RFC821 SMTP email transport class.
+ * Implements RFC 821 SMTP commands and provides some utility methods for sending mail to an SMTP server.
+ * @package PHPMailer
+ * @author Chris Ryan
+ * @author Marcus Bointon <phpmailer@synchromedia.co.uk>
+ * <https://github.com/PHPMailer/PHPMailer/blob/master/class.smtp.php>
  */
 
 class universalPHPmailer {
@@ -29,36 +40,54 @@ class universalPHPmailer {
    * Version
    * @var string
    */
-  const VERSION = '0.8.4';
+  const VERSION = '0.9';
 
   /**
    * Method used to send mail
    * @var string
    * Valid values are 'mail', 'smtp'
    */
-  public $mailMethod   = 'smtp';
+  public $mailMethod = 'smtp';
 
   /**
-   * Hostname of SMTP server
+   * Hostname of SMTP server we are connecting to.
    * @var string
    * For local SMTP server, try 'localhost'.
    */
-  public $SMTPserver   = 'localhost';
+  public $SMTPserver     = 'localhost';
 
-  public $SMTPport     = '25';
+  public $SMTPport       = '25';
 
-  public $SMTPtimeout  = '30';
+  public $SMTPtimeout    = '30';
+
+  public $SMTPtimeLimit  = '30';
+
+  public $SMTPusername   = '';
+
+  public $SMTPpassword   = '';
 
   /**
-   * Hostname for SMTP HELO
+   * Require SMTP connection to be secure
+   * @var boolean
+   */
+  public $SMTPsecure     = false;
+
+  /**
+   * Filename (incl. path) of CA certificate
    * @var string
-   * This should be FQDN, or if you use
-   * IP address, it must be in square braces.
-   * If you are connecting to an external SMTP server, it may be necessary
-   * to use your actual FQDN that is FcRDNS.
+   */
+  public $CAfile         = '';
+
+  /**
+   * Our hostname for SMTP HELO
+   * This is how we identify ourselves when connecting to the SMTP server.
+   * @var string
+   * This should be FQDN, or if you use IP address, it should be in
+   * square brackets. If you are connecting to an external SMTP server,
+   * it may be necessary to use your actual FQDN that is FcRDNS.
    * May need to be RFC2821 compliant.
    */
-  public $SMTPhelo     = '[127.0.0.1]';
+  public $SMTPhelo = 'localhost';
 
   public $SMTPlogFilename = '/SMTP.log';
 
@@ -70,6 +99,14 @@ class universalPHPmailer {
    * Consider disabling for better performance.
    */
   public $SMTPloggingEnable = true;
+
+  /**
+   * Local server timezone offset from GMT in seconds.
+   * Used for timestamp in logs.
+   * @var integer
+   * Value 0 corresponds to GMT timezone.
+   */
+  public $serverTZoffset = 0;
 
   /**
    * Recipeint's display name
@@ -94,12 +131,6 @@ class universalPHPmailer {
    * @var string
    */
   public $fromEmail;
-
-  /**
-   * Return Path email address (optional)
-   * @var string
-   */
-  public $returnPath;
 
   public $subject;
 
@@ -193,6 +224,12 @@ class universalPHPmailer {
   private $mimeBody;
 
   /**
+   * Complete & final string of the message (headers + body)
+   * @var string
+   */
+  private $mailString;
+
+  /**
    * Line wrapping & length limits per RFC5322
    * https://tools.ietf.org/html/rfc5322.html#section-2.1.1
    * @var integer
@@ -208,13 +245,21 @@ class universalPHPmailer {
    */
   const CHARSET = 'utf-8';
 
-  private $smtpSocket;
+  private $SMTPsocket;
 
-  private $EpochSocketOpened;
+  /**
+   * Extensions that are supported by SMTP server
+   * @var array('SIZE' => '20971520', 'STARTTLS' => true)
+   */
+  private $SMTPextensions;
+
+  private $EpochConnectionOpened;
 
   private $CounterSuccess;
 
   private $CounterFail;
+
+  private $last_reply;
 
   #===================================================================
 
@@ -223,13 +268,14 @@ class universalPHPmailer {
     $this->inlineImage    = array();
     $this->attachmentKey  = 0;
     $this->attachment     = array();
+    $this->last_reply     = '';
   }
 
   #===================================================================
 
   public function __destruct() {
     if ($this->mailMethod == 'smtp' && $this->isConnectionOpen()) {
-      $this->SMTPsocketClose();
+      $this->SMTPconnectionClose();
     }
   }
 
@@ -238,98 +284,356 @@ class universalPHPmailer {
   public function sendMessage() {
 
     if ($this->mailMethod == 'smtp' && !$this->isConnectionOpen()) {
-      if (!$this->SMTPsocketOpen()) {
-        return false; # Failed to connect
+      if (!$this->SMTPconnectionOpen()) {
+        $this->appendLog('Failed to establish SMTP connection.');
+        return false;
       }
     }
 
     $this->composeMessage();
 
-    #-----------------------------------
-    if ($this->mailMethod == 'mail') {
-      $to      = preg_replace('/^To:\s/', '', $this->encodeNameHeader('To', $this->toName, $this->toEmail));
-      $subject = preg_replace('/^Subject:\s/', '', $this->encodeHeader('Subject', $this->subject));
-      $headers = implode(self::CRLF, $this->mimeHeaders).self::CRLF;
-      #----
-      if (empty($this->returnPath)) {
-        $this->returnPath = $this->fromEmail;
-      }
-      #----
-      if (mail($to, $subject, $this->mimeBody, $headers, '-f'.$this->returnPath) !== false) {
-        return $this->messageId; # On success returns message ID.
-      }
-      return false;
+    switch ($this->mailMethod) {
+      #########################################
+      case 'mail':
+        $to      = preg_replace('/^To:\s/', '', $this->encodeNameHeader('To', $this->toName, $this->toEmail));
+        $subject = preg_replace('/^Subject:\s/', '', $this->encodeHeader('Subject', $this->subject));
+        $headers = implode(self::CRLF, $this->mimeHeaders).self::CRLF;
+        #----
+        if (mail($to, $subject, $this->mimeBody, $headers, '-f'.$this->fromEmail) !== false) {
+          return $this->messageId; # On success returns message ID.
+        }
+        return false;
+      #########################################
+      case 'smtp':
+        $this->mailString = implode(self::CRLF, $this->mimeHeaders) . self::CRLF . self::CRLF . $this->mimeBody;
+        # Check for excessive length
+        if ($this->isCapable('SIZE')) {
+          $len = strlen($this->mailString);
+          if ($len > $this->SMTPextensions['SIZE']) {
+            # Message string exceeds remote server's limit
+            $this->appendLog('Message size '.$len.' exceeds server\'s limit of '.$this->SMTPextensions['SIZE'].' bytes.');
+            $this->sendCommand('RSET', 250);
+            $this->CounterFail++;
+            return false;
+          }
+        }
+        if ($this->SMTPmail()) {
+          $this->CounterSuccess++;
+          return $this->messageId; # On success returns message ID.
+        }
+        $this->CounterFail++;
+        return false;
+      #########################################
+      default:
+        throw new Exception('Illegal value of property mailMethod');
     }
-    #-----------------------------------
-    if ($this->mailMethod == 'smtp') {
-      if ($this->SMTPmail()) {
-        return $this->messageId; # On success returns message ID.
-      }
-      return false;
-    }
-    #-----------------------------------
-    throw new Exception('Illegal value of property mailMethod');
   }
 
   #===================================================================
 
   private function SMTPmail() {
-    #----------
-    $this->appendLog('---------------------------------------------------');
-    #----------
-    fwrite($this->smtpSocket, 'MAIL FROM: <'. $this->fromEmail .'>'. self::CRLF);
-    #----------
-    $this->appendLog('OUT: MAIL FROM: <'. $this->fromEmail .'>');
-    #----------
-    $smtpResponse = $this->readLines();
-    #----------
-    $this->appendLog('IN:  '.$smtpResponse);
-    #----------
 
-    fwrite($this->smtpSocket, 'RCPT TO: <'. $this->toEmail .'>'. self::CRLF);
-    #----------
-    $this->appendLog('OUT: RCPT TO: <'. $this->toEmail .'>');
-    #----------
-    $smtpResponse = $this->readLines();
-    #----------
-    $this->appendLog('IN:  '.$smtpResponse);
-    #----------
+    $this->appendLog('---------------------------------------------------------');
 
-    fwrite($this->smtpSocket, 'DATA'. self::CRLF);
-    #----------
-    $this->appendLog('OUT: DATA');
-    #----------
-    $smtpResponse = $this->readLines();
-    #----------
-    $this->appendLog('IN:  '.$smtpResponse);
-    #----------
-
-    # The . after the newline implies the end of message
-    fwrite($this->smtpSocket, implode(self::CRLF, $this->mimeHeaders) . self::CRLF . self::CRLF . $this->mimeBody .'.'. self::CRLF);
-    #----------
-    $this->appendLog('OUT: [message headers and body]');
-    #----------
-    $smtpResponse = $this->readLines();
-    #----------
-    $this->appendLog('IN:  '.$smtpResponse);
-    #----------
-
-    $code = substr($smtpResponse, 0, 3);
-    if ($code == '250') {
-      $this->CounterSuccess++;
-      return true;
+    if (!$this->sendCommand('MAIL FROM:<'.$this->fromEmail.'>', 250)) {
+      return false;
     }
-    $this->CounterFail++;
-    return false;
+
+    if (!$this->sendCommand('RCPT TO:<'.$this->toEmail.'>', array(250, 251))) {
+      return false;
+    }
+
+    if (!$this->sendCommand('DATA', 354)) {
+      return false;
+    }
+
+    if (!$this->sendCommand($this->mailString . self::CRLF .'.', 250)) {
+      return false;
+    }
+
+    return true;
   }
 
   #===================================================================
 
-  private function readLines() {
-    $data = '';
-    while (is_resource($this->smtpSocket) && !feof($this->smtpSocket)) {
-      $str = @fgets($this->smtpSocket, 515);$data .= $str;
-      if ((isset($str[3]) and $str[3] == ' ')) {
+  private function SMTPconnectionOpen() {
+    # Start the stopwatch, counters.
+    $this->EpochConnectionOpened = microtime(true);
+    $this->CounterSuccess = 0;
+    $this->CounterFail = 0;
+
+    $this->appendLog('=========================================================');
+
+    $context = stream_context_create();
+
+    if ($this->SMTPsecure) {
+      if (!empty($this->CAfile)) {
+        stream_context_set_option($context, 'ssl', 'cafile',            $this->CAfile);
+        stream_context_set_option($context, 'ssl', 'verify_host',       true);
+        stream_context_set_option($context, 'ssl', 'verify_peer',       true);
+        stream_context_set_option($context, 'ssl', 'verify_peer_name',  true);
+        stream_context_set_option($context, 'ssl', 'allow_self_signed', false);
+      }
+      else {
+        stream_context_set_option($context, 'ssl', 'verify_host',       false);
+        stream_context_set_option($context, 'ssl', 'verify_peer',       false);
+        stream_context_set_option($context, 'ssl', 'verify_peer_name',  false);
+        stream_context_set_option($context, 'ssl', 'allow_self_signed', true);
+      }
+    }
+
+    $this->SMTPsocket = stream_socket_client($this->SMTPserver.':'.$this->SMTPport, $errno, $errstr, $this->SMTPtimeout, STREAM_CLIENT_CONNECT, $context);
+    #----------
+    $this->appendLog('Connecting to server '.$this->SMTPserver.' on port '.$this->SMTPport);
+    #----------
+    if (!is_resource($this->SMTPsocket)) {
+      #----------
+      $this->appendLog('ERROR: Failed to connect: '.$errstr.' ('.$errno.')');
+      #----------
+      return false;
+    }
+
+    $greeting = $this->get_lines();
+    $this->appendLog($greeting);
+
+    if (substr($greeting, 0, 3) != '220') {
+      return false;
+    }
+
+    if (!$this->sendCommand('EHLO '.$this->SMTPhelo, 250)) {
+      return false;
+    }
+/*
+250-mail.domain.example
+250-PIPELINING
+250-SIZE 20971520
+250-ETRN
+250-STARTTLS
+250-ENHANCEDSTATUSCODES
+250-8BITMIME
+250-DSN
+250 SMTPUTF8
+*/
+    $this->updateExtensionList();
+
+    #---------------------------------------------------------
+
+    if ($this->isCapable('STARTTLS')) {
+      if (!$this->startTLS()) {
+        return false;
+      }
+    }
+    elseif ($this->SMTPsecure) {
+      $this->appendLog('ERROR: User configuration requires secure connection.');
+      return false;
+    }
+
+    #---------------------------------------------------------
+
+    if ($this->isCapable('AUTH')) {
+      if (!$this->authenticate()) {
+        return false;
+      }
+    }
+
+    #---------------------------------------------------------
+
+    return true; # Successfully connected to server.
+  }
+
+  #===================================================================
+
+  private function isCapable($ext) {
+    if (empty($this->SMTPextensions)) {
+      return false;
+    }
+    return array_key_exists($ext, $this->SMTPextensions);
+  }
+
+  #===================================================================
+
+  private function authenticate() {
+
+    if (empty($this->SMTPusername) || empty($this->SMTPpassword)) {
+      $this->appendLog('ERROR: Authentication requires non-empty username and password.');
+      return false;
+    }
+
+    $supported = array('PLAIN', 'LOGIN', 'CRAM-MD5');
+
+    foreach ($supported as $mechanism) {
+      if (in_array($mechanism, $this->SMTPextensions['AUTH'])) {
+        break;
+      }
+      $this->appendLog('ERROR: No matching authentication mechanism.');
+      return false;
+    }
+
+    switch ($mechanism) {
+      #--------------------------------------------
+      case 'PLAIN':
+        if (!$this->sendCommand('AUTH PLAIN', 334)) {
+          return false;
+        }
+        if (!$this->sendCommand(base64_encode("\0" . $this->SMTPusername . "\0" . $this->SMTPpassword), 235)) {
+          return false;
+        }
+        break;
+      #--------------------------------------------
+      case 'LOGIN':
+        if (!$this->sendCommand('AUTH LOGIN', 334)) {
+          return false;
+        }
+        if (!$this->sendCommand(base64_encode($this->SMTPusername), 334)) {
+          return false;
+        }
+        if (!$this->sendCommand(base64_encode($this->SMTPpassword), 235)) {
+          return false;
+        }
+        break;
+      #--------------------------------------------
+      case 'CRAM-MD5':
+        if (!$this->sendCommand('AUTH CRAM-MD5', 334)) {
+          return false;
+        }
+        $challenge = base64_decode(substr($this->last_reply, 4));
+        $response  = $this->SMTPusername.' '.hash_hmac('md5', $challenge, $this->SMTPpassword);
+        if (!$this->sendCommand('Username', base64_encode($response), 235)) {
+          return false;
+        }
+        break;
+      #--------------------------------------------
+      default:
+        $this->appendLog('ERROR: Unsupported authentication mechanism '.$mechanism);
+        return false;
+    }
+
+    return true;
+  }
+
+  #===================================================================
+
+  private function startTLS() {
+
+    if (!$this->sendCommand('STARTTLS', 220)) {
+      return false;
+    }
+
+    $method = STREAM_CRYPTO_METHOD_TLS_CLIENT;
+    if (defined('STREAM_CRYPTO_METHOD_TLSv1_2_CLIENT')) {
+      $method |= STREAM_CRYPTO_METHOD_TLSv1_2_CLIENT;
+      $method |= STREAM_CRYPTO_METHOD_TLSv1_1_CLIENT;
+    }
+    stream_socket_enable_crypto($this->SMTPsocket, true, $method);
+
+    if (!$this->sendCommand('EHLO '.$this->SMTPhelo, 250)) {
+      return false;
+    }
+/*
+250-mail.domain.example
+250-PIPELINING
+250-SIZE 20971520
+250-ETRN
+250-AUTH PLAIN
+250-ENHANCEDSTATUSCODES
+250-8BITMIME
+250-DSN
+250 SMTPUTF8
+*/
+    $this->updateExtensionList();
+
+    return true;
+  }
+
+  #===================================================================
+
+  private function updateExtensionList() {
+    $ext = explode(self::CRLF, trim($this->last_reply));
+    foreach ($ext as $val) {
+      if (preg_match('/^\d{3}(\ |-)([A-Z0-9]{2,26})(\ ([A-Z0-9\ -]{1,64}))?$/', $val, $match)) {
+        # Only if extension isn't in our array
+        if (empty($this->SMTPextensions[$match[2]])) {
+          if (!empty($match[2]) && $match[2] == 'SIZE' && !empty($match[4])) {
+            $this->SMTPextensions[$match[2]] = $match[4];               # 'SIZE' => '20971520'
+          }
+          elseif (!empty($match[2]) && $match[2] == 'AUTH' && !empty($match[4])) {
+            $this->SMTPextensions[$match[2]] = explode(' ', $match[4]); # 'AUTH' => array('PLAIN', 'LOGIN', 'CRAM-MD5')
+          }
+          else {
+            $this->SMTPextensions[$match[2]] = true;                    # 'STARTTLS' => true
+          }
+        }
+      }
+    }
+  }
+
+  #===================================================================
+
+  private function SMTPconnectionClose() {
+
+    $this->appendLog('---------------------------------------------------------');
+
+    $this->sendCommand('QUIT', 221);
+
+    $this->appendLog('---------------------------------------------------------');
+
+    $this->appendLog('MESSAGES-SENT: '.$this->CounterSuccess.'; MESSAGES-FAILED: '.$this->CounterFail.'; CONNECT-TIME: '.$this->benchmark($this->EpochConnectionOpened));
+
+    fclose($this->SMTPsocket);
+    $this->SMTPsocket = null;
+    $this->EpochConnectionOpened = null;
+    $this->CounterSuccess = null;
+    $this->CounterFail = null;
+  }
+
+  #===================================================================
+
+  private function sendCommand($commandstring, $expect) {
+
+    $this->appendLog('OUT: '.$commandstring);
+
+    fwrite($this->SMTPsocket, $commandstring . self::CRLF);
+
+    $this->last_reply = $this->get_lines();
+
+    $this->appendLog('IN:  '.$this->last_reply);
+
+    $code = substr($this->last_reply, 0, 3);
+
+    if (!in_array($code, (array)$expect)) {
+      return false;
+    }
+
+    return true;
+  }
+
+  #===================================================================
+
+  private function get_lines() {
+    # If the connection is bad, give up straight away
+    if (!is_resource($this->SMTPsocket)) {
+      return '';
+    }
+    $data    = '';
+    $endtime = 0;
+    stream_set_timeout($this->SMTPsocket, $this->SMTPtimeout);
+    if ($this->SMTPtimeLimit > 0) {
+      $endtime = time() + $this->SMTPtimeLimit;
+    }
+    while (is_resource($this->SMTPsocket) && !feof($this->SMTPsocket)) {
+      $str = @fgets($this->SMTPsocket, 515);
+      $data .= $str;
+      # If 4th character is a space, we are done reading, break the loop.
+      if (isset($str[3]) && $str[3] == ' ') {
+        break;
+      }
+      # Timed-out?
+      $info = stream_get_meta_data($this->SMTPsocket);
+      if ($info['timed_out']) {
+        break;
+      }
+      # Now check if reads took too long
+      if ($endtime && time() > $endtime) {
         break;
       }
     }
@@ -338,78 +642,11 @@ class universalPHPmailer {
 
   #===================================================================
 
-  private function SMTPsocketOpen() {
-    # Start the stopwatch, counters.
-    $this->EpochSocketOpened = microtime(true);
-    $this->CounterSuccess = 0;
-    $this->CounterFail = 0;
-
-    $this->appendLog('===================================================');
-
-    $context = stream_context_create();
-
-    #----------
-    $this->smtpSocket = stream_socket_client($this->SMTPserver.':'.$this->SMTPport, $errno, $errstr, $this->SMTPtimeout, STREAM_CLIENT_CONNECT, $context);
-    #----------
-    $this->appendLog('Connecting to server '.$this->SMTPserver.' on port '.$this->SMTPport);
-    #----------
-    if (!is_resource($this->smtpSocket)) {
-      #----------
-      $this->appendLog('Failed to connect; '.$errno.'; '.$errstr);
-      #----------
-      return false;
-    }
-    #----------
-    $smtpResponse = $this->readLines();
-    #----------
-    $this->appendLog('IN:  '.$smtpResponse);
-    #----------
-
-    fwrite($this->smtpSocket, 'HELO '. $this->SMTPhelo . self::CRLF);
-    #----------
-    $this->appendLog('OUT: HELO '. $this->SMTPhelo);
-    #----------
-    $smtpResponse = $this->readLines();
-    #----------
-    $this->appendLog('IN:  '.$smtpResponse);
-    #----------
-
-    return true; # Successfully connected to server.
-  }
-
-  #===================================================================
-
-  private function SMTPsocketClose() {
-    #----------
-    $this->appendLog('---------------------------------------------------');
-    #----------
-    fwrite($this->smtpSocket, 'QUIT'. self::CRLF);
-    #----------
-    $this->appendLog('OUT: QUIT');
-    #----------
-    $smtpResponse = $this->readLines();
-    #----------
-    $this->appendLog('IN:  '.$smtpResponse);
-    #----------
-    $this->appendLog('---------------------------------------------------');
-    #----------
-    $this->appendLog('MESSAGES-SENT: '.$this->CounterSuccess.'; MESSAGES-FAILED: '.$this->CounterFail.'; CONNECT-TIME: '.$this->benchmark($this->EpochSocketOpened));
-    #----------
-
-    fclose($this->smtpSocket);
-    $this->smtpSocket = null;
-    $this->EpochSocketOpened = null;
-    $this->CounterSuccess = null;
-    $this->CounterFail = null;
-  }
-
-  #===================================================================
-
   private function isConnectionOpen() {
-    if (is_resource($this->smtpSocket)) {
-      $status = stream_get_meta_data($this->smtpSocket);
+    if (is_resource($this->SMTPsocket)) {
+      $status = stream_get_meta_data($this->SMTPsocket);
       if ($status['eof']) {
-        $this->SMTPsocketClose();
+        $this->SMTPconnectionClose();
         return false;
       }
       return true;
@@ -963,7 +1200,11 @@ class universalPHPmailer {
     if (!$this->SMTPloggingEnable) {
       return;
     }
-    file_put_contents($this->cacheDir . $this->SMTPlogFilename, '['.date("Y-m-d H:i:s").'] '. trim($str) . PHP_EOL, FILE_APPEND | LOCK_EX);
+    $str = trim($str);
+    if (strlen($str) > 1000) {
+      $str = substr($str, 0, 1000).' ... [truncated]';
+    }
+    file_put_contents($this->cacheDir . $this->SMTPlogFilename, '['.gmdate("Y-m-d H:i:s", time() + $this->serverTZoffset).'] '. $str . PHP_EOL, FILE_APPEND | LOCK_EX);
   }
 
   #===================================================================

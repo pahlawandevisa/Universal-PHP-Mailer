@@ -1,9 +1,9 @@
 # Universal PHP Mailer
-Super simple yet very powerful PHP mailer. It can use the PHP `mail()` function or the `SMTP` method (local SMTP server).
+Super simple yet very powerful PHP mailer. It can use the PHP `mail()` function or the `SMTP` method (local or remote SMTP server).
 
 This mailer is capable of sending anything. You can use it to send very simple mail and even some very complex content combinations. Just give it whatever you have and fire it off! It will automatically configure itself to compose the correct MIME mail string with whatever parts and multiparts are appropriate.
 
-When using the `SMTP` method, the mailer reuses the same socket connection for sending multiple messages, thus achieving better efficiency than the `mail()` function method. At this time, the `SMTP` method supports only local SMTP server and I am thinking to keep it that way because it satisfies my needs.
+When using the `SMTP` method, the mailer reuses the same socket connection for sending multiple messages, thus achieving better efficiency than the `mail()` function method.
 
 These are the possible combinations (automatic configurations):
 
@@ -282,3 +282,16 @@ if (!empty($msgID)) {
 }
 
 ```
+
+---
+
+#Acknowledgements
+
+Peter Kahl had written much of the SMTP-related methods of this package as a result of inspiration from the following class and extends his thanks to the authors thereof:
+
+> PHPMailer RFC821 SMTP email transport class.
+> Implements RFC 821 SMTP commands and provides some utility methods for sending mail to an SMTP server.
+> @package PHPMailer
+> @author Chris Ryan
+> @author Marcus Bointon <phpmailer@synchromedia.co.uk>
+> <https://github.com/PHPMailer/PHPMailer/blob/master/class.smtp.php>
