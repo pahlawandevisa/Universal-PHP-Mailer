@@ -3,7 +3,7 @@
 /**
  * Universal PHP Mailer
  *
- * @version    0.9.1 (2016-12-07 08:06:00 GMT)
+ * @version    0.9.2 (2016-12-09 07:57:00 GMT)
  * @author     Peter Kahl <peter.kahl@colossalmind.com>
  * @copyright  2016 Peter Kahl
  * @license    Apache License, Version 2.0
@@ -14,7 +14,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      <http://www.apache.org/licenses/LICENSE-2.0>
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -40,7 +40,7 @@ class universalPHPmailer {
    * Version
    * @var string
    */
-  const VERSION = '0.9.1';
+  const VERSION = '0.9.2';
 
   /**
    * Method used to send mail
@@ -69,14 +69,18 @@ class universalPHPmailer {
   /**
    * Require SMTP connection to be secure
    * @var boolean
+   * If you're using a remote SMTP server, you should be using secure
+   * connection.
    */
   public $SMTPsecure     = false;
 
   /**
    * Filename (incl. path) of CA certificate
    * @var string
+   * You may download and install on your server this Mozilla bundle:
+   * <https://raw.githubusercontent.com/bagder/ca-bundle/master/ca-bundle.crt>
    */
-  public $CAfile         = '';
+  public $CAfile;
 
   /**
    * Our hostname for SMTP HELO
@@ -89,22 +93,29 @@ class universalPHPmailer {
    */
   public $SMTPhelo = 'localhost';
 
-  public $SMTPlogFilename = '/SMTP.log';
+  public $logFilename = '/SMTP.log';
 
   public $cacheDir = '/srv/cache';
 
   /**
-   * Enable logging (for debugging).
+   * Enable debug
    * @var boolean
    * Consider disabling for better performance.
    */
-  public $SMTPloggingEnable = true;
+  public $debugEnable = false;
+
+  /**
+   * Method of debug
+   * @var string
+   * Valid values ... 'echo', 'log'
+   */
+  public $debugMethod = 'log';
 
   /**
    * Local server timezone offset from GMT in seconds.
    * Used for timestamp in logs.
    * @var integer
-   * Value 0 corresponds to GMT timezone.
+   * Value 0 represents GMT.
    */
   public $serverTZoffset = 0;
 
@@ -285,7 +296,7 @@ class universalPHPmailer {
 
     if ($this->mailMethod == 'smtp' && !$this->isConnectionOpen()) {
       if (!$this->SMTPconnectionOpen()) {
-        $this->appendLog('Failed to establish SMTP connection.');
+        $this->debug('Failed to establish SMTP connection.');
         return false;
       }
     }
@@ -310,7 +321,7 @@ class universalPHPmailer {
         if ($this->isCapable('SIZE')) {
           $len = strlen($this->mailString);
           if ($len > $this->SMTPextensions['SIZE']) {
-            $this->appendLog('Message size '.$len.' exceeds server\'s limit of '.$this->SMTPextensions['SIZE'].' bytes.');
+            $this->debug('Message size '.$len.' exceeds server\'s limit of '.$this->SMTPextensions['SIZE'].' bytes.');
             $this->CounterFail++;
             return false;
           }
@@ -331,7 +342,7 @@ class universalPHPmailer {
 
   private function SMTPmail() {
 
-    $this->appendLog('---------------------------------------------------------');
+    $this->debug('---------------------------------------------------------');
 
     if (!$this->sendCommand('MAIL FROM:<'.$this->fromEmail.'>', 250)) {
       return false;
@@ -360,7 +371,7 @@ class universalPHPmailer {
     $this->CounterSuccess = 0;
     $this->CounterFail = 0;
 
-    $this->appendLog('=========================================================');
+    $this->debug('=========================================================');
 
     $context = stream_context_create();
 
@@ -382,17 +393,17 @@ class universalPHPmailer {
 
     $this->SMTPsocket = stream_socket_client($this->SMTPserver.':'.$this->SMTPport, $errno, $errstr, $this->SMTPtimeout, STREAM_CLIENT_CONNECT, $context);
     #----------
-    $this->appendLog('Connecting to server '.$this->SMTPserver.' on port '.$this->SMTPport);
+    $this->debug('Connecting to server '.$this->SMTPserver.' on port '.$this->SMTPport);
     #----------
     if (!is_resource($this->SMTPsocket)) {
       #----------
-      $this->appendLog('ERROR: Failed to connect: '.$errstr.' ('.$errno.')');
+      $this->debug('ERROR: Failed to connect: '.$errstr.' ('.$errno.')');
       #----------
       return false;
     }
 
     $greeting = $this->get_lines();
-    $this->appendLog($greeting);
+    $this->debug($greeting);
 
     if (substr($greeting, 0, 3) != '220') {
       return false;
@@ -422,7 +433,7 @@ class universalPHPmailer {
       }
     }
     elseif ($this->SMTPsecure) {
-      $this->appendLog('ERROR: User configuration requires secure connection.');
+      $this->debug('ERROR: User configuration requires secure connection.');
       return false;
     }
 
@@ -453,7 +464,7 @@ class universalPHPmailer {
   private function authenticate() {
 
     if (empty($this->SMTPusername) || empty($this->SMTPpassword)) {
-      $this->appendLog('ERROR: Authentication requires non-empty username and password.');
+      $this->debug('ERROR: Authentication requires non-empty username and password.');
       return false;
     }
 
@@ -463,7 +474,7 @@ class universalPHPmailer {
       if (in_array($mechanism, $this->SMTPextensions['AUTH'])) {
         break;
       }
-      $this->appendLog('ERROR: No matching authentication mechanism.');
+      $this->debug('ERROR: No matching authentication mechanism.');
       return false;
     }
 
@@ -502,7 +513,7 @@ class universalPHPmailer {
         break;
       #--------------------------------------------
       default:
-        $this->appendLog('ERROR: Unsupported authentication mechanism '.$mechanism);
+        $this->debug('ERROR: Unsupported authentication mechanism '.$mechanism);
         return false;
     }
 
@@ -532,7 +543,7 @@ class universalPHPmailer {
 250-PIPELINING
 250-SIZE 20971520
 250-ETRN
-250-AUTH PLAIN
+250-AUTH PLAIN LOGIN CRAM-MD5
 250-ENHANCEDSTATUSCODES
 250-8BITMIME
 250-DSN
@@ -548,7 +559,7 @@ class universalPHPmailer {
   private function updateExtensionList() {
     $ext = explode(self::CRLF, trim($this->last_reply));
     foreach ($ext as $val) {
-      if (preg_match('/^\d{3}(\ |-)([A-Z0-9]{2,26})(\ ([A-Z0-9\ -]{1,64}))?$/', $val, $match)) {
+      if (preg_match('/^\d{3}(\ |-)([A-Z0-9]{2,66})(\ ([A-Z0-9\ -]{1,128}))?$/', $val, $match)) {
         # Only if extension isn't in our array
         if (empty($this->SMTPextensions[$match[2]])) {
           if (!empty($match[2]) && $match[2] == 'SIZE' && !empty($match[4])) {
@@ -569,32 +580,30 @@ class universalPHPmailer {
 
   private function SMTPconnectionClose() {
 
-    $this->appendLog('---------------------------------------------------------');
+    $this->debug('---------------------------------------------------------');
 
     $this->sendCommand('QUIT', 221);
 
-    $this->appendLog('---------------------------------------------------------');
+    $this->debug('---------------------------------------------------------');
 
-    $this->appendLog('MESSAGES-SENT: '.$this->CounterSuccess.'; MESSAGES-FAILED: '.$this->CounterFail.'; CONNECT-TIME: '.$this->benchmark($this->EpochConnectionOpened));
+    $this->debug('MESSAGES-SENT: '.$this->CounterSuccess.'; MESSAGES-FAILED: '.$this->CounterFail.'; CONNECT-TIME: '.$this->benchmark($this->EpochConnectionOpened));
 
     fclose($this->SMTPsocket);
     $this->SMTPsocket = null;
     $this->EpochConnectionOpened = null;
-    $this->CounterSuccess = null;
-    $this->CounterFail = null;
   }
 
   #===================================================================
 
   private function sendCommand($commandstring, $expect) {
 
-    $this->appendLog('>>> '.$commandstring);
+    $this->debug('>>> '.$commandstring);
 
     fwrite($this->SMTPsocket, $commandstring . self::CRLF);
 
     $this->last_reply = $this->get_lines();
 
-    $this->appendLog('<<< '.$this->last_reply);
+    $this->debug('<<< '.$this->last_reply);
 
     $code = substr($this->last_reply, 0, 3);
 
@@ -1194,24 +1203,32 @@ class universalPHPmailer {
 
   #===================================================================
 
-  public function appendLog($str) {
-    if (!$this->SMTPloggingEnable) {
-      return;
+  private function debug($str) {
+    if ($this->debugEnable) {
+      if ($this->debugMethod == 'echo') {
+        echo htmlentities(trim($str)) . PHP_EOL;
+      }
+      elseif ($this->debugMethod == 'log') {
+        $this->appendLog($str);
+      }
+      else {
+        throw new Exception('Illegal value debugMethod');
+      }
     }
-    $str = trim($str);
-    if (strlen($str) > 1000) {
-      $str = substr($str, 0, 1000).' ... [truncated]';
-    }
-    file_put_contents($this->cacheDir . $this->SMTPlogFilename, '['.gmdate("Y-m-d H:i:s", time() + $this->serverTZoffset).'] '. $str . PHP_EOL, FILE_APPEND | LOCK_EX);
   }
 
   #===================================================================
 
-  /**
-   * Measure time.
-   *
-   * @return string
-   */
+  private function appendLog($str) {
+    $str = trim($str);
+    if (strlen($str) > 1000) {
+      $str = substr($str, 0, 1000).' ... [truncated]';
+    }
+    file_put_contents($this->cacheDir . $this->logFilename, '['.gmdate("Y-m-d H:i:s", time() + $this->serverTZoffset).'] '. $str . PHP_EOL, FILE_APPEND | LOCK_EX);
+  }
+
+  #===================================================================
+
   private function benchmark($st) {
     $val = (microtime(true) - $st);
     if ($val >= 1) {
