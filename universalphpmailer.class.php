@@ -3,7 +3,7 @@
 /**
  * Universal PHP Mailer
  *
- * @version    0.9.2 (2016-12-09 07:57:00 GMT)
+ * @version    0.9.3 (2016-12-11 08:03:00 GMT)
  * @author     Peter Kahl <peter.kahl@colossalmind.com>
  * @copyright  2016 Peter Kahl
  * @license    Apache License, Version 2.0
@@ -40,7 +40,7 @@ class universalPHPmailer {
    * Version
    * @var string
    */
-  const VERSION = '0.9.2';
+  const VERSION = '0.9.3';
 
   /**
    * Method used to send mail
@@ -650,7 +650,7 @@ class universalPHPmailer {
   #===================================================================
 
   private function isConnectionOpen() {
-    if (is_resource($this->SMTPsocket)) {
+    if (!empty($this->sock) && is_resource($this->SMTPsocket)) {
       $status = stream_get_meta_data($this->SMTPsocket);
       if ($status['eof']) {
         $this->SMTPconnectionClose();
