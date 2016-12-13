@@ -2,7 +2,7 @@
 /**
  * Universal PHP Mailer
  *
- * @version    0.9.4 (2016-12-11 21:57:00 GMT)
+ * @version    0.9.5 (2016-12-11 01:56:00 GMT)
  * @author     Peter Kahl <peter.kahl@colossalmind.com>
  * @copyright  2016 Peter Kahl
  * @license    Apache License, Version 2.0
@@ -39,7 +39,7 @@ class universalPHPmailer {
    * Version
    * @var string
    */
-  const VERSION = '0.9.4';
+  const VERSION = '0.9.5';
 
   /**
    * Method used to send mail
@@ -370,7 +370,7 @@ class universalPHPmailer {
     $this->CounterSuccess = 0;
     $this->CounterFail = 0;
 
-    $this->debug('=========================================================');
+    $this->debug('#########################################################');
 
     $context = stream_context_create();
 
@@ -392,7 +392,7 @@ class universalPHPmailer {
 
     $this->SMTPsocket = stream_socket_client($this->SMTPserver.':'.$this->SMTPport, $errno, $errstr, $this->SMTPtimeout, STREAM_CLIENT_CONNECT, $context);
     #----------
-    $this->debug('Connecting to server '.$this->SMTPserver.' on port '.$this->SMTPport);
+    $this->debug('Connecting to server '.strtoupper($this->SMTPserver).' on port '.$this->SMTPport.' ...');
     #----------
     if (!is_resource($this->SMTPsocket)) {
       #----------
@@ -402,7 +402,7 @@ class universalPHPmailer {
     }
 
     $greeting = $this->get_lines();
-    $this->debug($greeting);
+    $this->debug('<<< '.$greeting);
 
     if (substr($greeting, 0, 3) != '220') {
       return false;
