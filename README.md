@@ -83,6 +83,7 @@ if (!empty($msgID)) {
 How to send `text/html` + `inline images`:
 ```php
 require 'universalphpmailer.class.php';
+require 'mimetypes.class.php';
 
 $mailor = new universalPHPmailer;
 
@@ -117,6 +118,7 @@ if (!empty($msgID)) {
 How to send `text/plain` + `text/html` + `inline images`:
 ```php
 require 'universalphpmailer.class.php';
+require 'mimetypes.class.php';
 
 $mailor = new universalPHPmailer;
 
@@ -158,6 +160,7 @@ if (!empty($msgID)) {
 How to send `text/plain` + `text/html` + `inline images` + `attachment`:
 ```php
 require 'universalphpmailer.class.php';
+require 'mimetypes.class.php';
 
 $mailor = new universalPHPmailer;
 
@@ -201,6 +204,7 @@ if (!empty($msgID)) {
 How to send `text/html` + `inline images` in a loop (multiple recipients):
 ```php
 require 'universalphpmailer.class.php';
+require 'mimetypes.class.php';
 
 $mailor = new universalPHPmailer;
 
