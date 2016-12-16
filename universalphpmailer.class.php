@@ -2,7 +2,7 @@
 /**
  * Universal PHP Mailer
  *
- * @version    0.10.2 (2016-12-16 10:02:00 GMT)
+ * @version    0.10.3 (2016-12-16 20:33:00 GMT)
  * @author     Peter Kahl <peter.kahl@colossalmind.com>
  * @copyright  2016 Peter Kahl
  * @license    Apache License, Version 2.0
@@ -39,7 +39,7 @@ class universalPHPmailer {
    * Version
    * @var string
    */
-  const VERSION = '0.10.2';
+  const VERSION = '0.10.3';
 
   /**
    * Method used to send mail
@@ -697,7 +697,7 @@ class universalPHPmailer {
       }
     }
 
-    #$this->mimeHeaders[] = $this->foldLine('X-Mailer: universalPHPmailer/'.self::VERSION.' (https://github.com/peterkahl/Universal-PHP-Mailer)');
+    $this->mimeHeaders[] = $this->foldLine('X-Mailer: universalPHPmailer/'.self::VERSION.' (https://github.com/peterkahl/Universal-PHP-Mailer)');
     $this->mimeHeaders[] = 'MIME-Version: 1.0';
 
     $multiTypes = array();
@@ -1166,7 +1166,7 @@ class universalPHPmailer {
       }
     }
     $test = implode(' ', $new);
-    if (strlen($test) > self::LINE_LEN_MAX) {
+    if ($this->isHeaderTooLong($test)) {
       throw new Exception('Line length exceeds RFC5322 limit of '.self::LINE_LEN_MAX);
     }
     return implode(self::CRLF.' ', $new);
