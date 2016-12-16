@@ -1,7 +1,11 @@
 # Universal PHP Mailer
 Super simple yet very powerful PHP mailer. It can use the PHP `mail()` function or the `SMTP` method (local or remote SMTP server).
 
-This mailer is capable of sending anything. You can use it to send very simple mail and even some very complex content combinations. Just give it whatever you have and fire it off! It will automatically configure itself to compose the correct MIME mail string with whatever parts and multiparts are appropriate.
+##Universal?
+
+This doesn't mean that it works in every configuration and every situation.
+
+It means that this mailer is capable of sending anything. You can use it to send very simple mail and even some very complex content combinations. Just give it whatever you have and fire it off! It will automatically configure itself to compose the correct MIME mail string with whatever parts and multiparts are appropriate.
 
 When using the `SMTP` method, the mailer reuses the same socket connection for sending multiple messages, thus achieving better efficiency than the `mail()` function method.
 
