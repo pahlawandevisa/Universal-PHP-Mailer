@@ -2,7 +2,7 @@
 /**
  * Universal PHP Mailer
  *
- * @version    0.10.1 (2016-12-16 09:47:00 GMT)
+ * @version    0.10.2 (2016-12-16 10:02:00 GMT)
  * @author     Peter Kahl <peter.kahl@colossalmind.com>
  * @copyright  2016 Peter Kahl
  * @license    Apache License, Version 2.0
@@ -39,7 +39,7 @@ class universalPHPmailer {
    * Version
    * @var string
    */
-  const VERSION = '0.10.1';
+  const VERSION = '0.10.2';
 
   /**
    * Method used to send mail
@@ -1139,7 +1139,7 @@ class universalPHPmailer {
   #===================================================================
 
   /**
-   * Folding of excessively long header lines, RFC5322
+   * Folding of excessively long header lines, RFC5322.
    * https://tools.ietf.org/html/rfc5322.html#section-3.2.2
    * IMPORTANT:
    *     Headers with FWS (folding white space) may cause
@@ -1147,10 +1147,7 @@ class universalPHPmailer {
    *     need to set DKIM Canonicalization to 'relaxed'.
    */
   private function foldLine($str) {
-    if (strlen($str) > self::LINE_LEN_MAX) {
-      throw new Exception('Line length exceeds RFC5322 limit of '.self::LINE_LEN_MAX);
-    }
-    if (!$this->isMultibyteString($str) && strlen($str) <= self::WRAP_LEN - 1) {
+    if (!$this->isMultibyteString($str) && strlen($str) <= self::WRAP_LEN) {
       return $str;
     }
     $arr = explode(self::CRLF, wordwrap($str, self::WRAP_LEN - 1, self::CRLF));
@@ -1168,7 +1165,24 @@ class universalPHPmailer {
         $new[] = $av;
       }
     }
+    $test = implode(' ', $new);
+    if (strlen($test) > self::LINE_LEN_MAX) {
+      throw new Exception('Line length exceeds RFC5322 limit of '.self::LINE_LEN_MAX);
+    }
     return implode(self::CRLF.' ', $new);
+  }
+
+  #===================================================================
+
+  /**
+   * Check for total length limit per RFC5322.
+   * https://tools.ietf.org/html/rfc5322.html#section-3.2.2
+   */
+  private function isHeaderTooLong($str) {
+    if (strlen($str) > self::LINE_LEN_MAX) {
+      return true;
+    }
+    return false;
   }
 
   #===================================================================
