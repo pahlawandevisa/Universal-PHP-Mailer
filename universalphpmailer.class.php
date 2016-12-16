@@ -2,7 +2,7 @@
 /**
  * Universal PHP Mailer
  *
- * @version    0.10 (2016-12-13 08:42:00 GMT)
+ * @version    0.10.1 (2016-12-16 09:47:00 GMT)
  * @author     Peter Kahl <peter.kahl@colossalmind.com>
  * @copyright  2016 Peter Kahl
  * @license    Apache License, Version 2.0
@@ -39,7 +39,7 @@ class universalPHPmailer {
    * Version
    * @var string
    */
-  const VERSION = '0.10';
+  const VERSION = '0.10.1';
 
   /**
    * Method used to send mail
@@ -246,6 +246,13 @@ class universalPHPmailer {
    */
   const WRAP_LEN = 76;
   const LINE_LEN_MAX = 998;
+
+  /**
+   * Maximum length of multibyte segment for use in headers.
+   * This is needed for proper line folding.
+   * @var string
+   */
+  const MB_LEN_MAX = 6;
 
   const CRLF = "\r\n";
 
@@ -1088,16 +1095,22 @@ class universalPHPmailer {
    *
    */
   private function break2segments($str) {
-    $len = iconv_strlen($str);
-    $max = floor(self::WRAP_LEN / 10);
-    if ($len < $max) {
-      return array($str);
+    $chars = preg_split('//u', $str, -1, PREG_SPLIT_NO_EMPTY); # array
+    $new = array();
+    $i = 0;
+    foreach ($chars as $ch) {
+      if (empty($new[$i])) {
+        $new[$i] = $ch;
+      }
+      else {
+        $new[$i] .= $ch;
+      }
+      # Check length
+      if (mb_strlen($new[$i]) > self::MB_LEN_MAX) {
+        $i++;
+      }
     }
-    $arr = array();
-    for ($k = 0; $k*$max < $len; $k++) {
-      $arr[$k] = mb_substr($str, 0+$k*$max, $max);
-    }
-    return $arr;
+    return $new;
   }
 
   #===================================================================
@@ -1137,13 +1150,13 @@ class universalPHPmailer {
     if (strlen($str) > self::LINE_LEN_MAX) {
       throw new Exception('Line length exceeds RFC5322 limit of '.self::LINE_LEN_MAX);
     }
-    if (strlen($str) <= self::WRAP_LEN) {
+    if (!$this->isMultibyteString($str) && strlen($str) <= self::WRAP_LEN - 1) {
       return $str;
     }
-    $arr = explode(self::CRLF, wordwrap($str, self::WRAP_LEN, self::CRLF));
+    $arr = explode(self::CRLF, wordwrap($str, self::WRAP_LEN - 1, self::CRLF));
     $new = array();
     foreach ($arr as $av) {
-      if (strlen($av) > self::WRAP_LEN && strpos($av, '?=') !== false) {
+      if (strlen($av) > self::WRAP_LEN - 1 && strpos($av, '?=') !== false) {
         $tmp = explode('?=', $av);
         foreach ($tmp as $tv) {
           if (!empty($tv)) {
