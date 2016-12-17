@@ -2,7 +2,7 @@
 /**
  * Universal PHP Mailer
  *
- * @version    0.10.3 (2016-12-16 20:33:00 GMT)
+ * @version    0.10.4 (2016-12-17 22:08:00 GMT)
  * @author     Peter Kahl <peter.kahl@colossalmind.com>
  * @copyright  2016 Peter Kahl
  * @license    Apache License, Version 2.0
@@ -39,7 +39,7 @@ class universalPHPmailer {
    * Version
    * @var string
    */
-  const VERSION = '0.10.3';
+  const VERSION = '0.10.4';
 
   /**
    * Method used to send mail
@@ -252,7 +252,7 @@ class universalPHPmailer {
    * This is needed for proper line folding.
    * @var string
    */
-  const MB_LEN_MAX = 6;
+  const MB_LEN_MAX = 7;
 
   const CRLF = "\r\n";
 
@@ -437,11 +437,12 @@ class universalPHPmailer {
 
     if ($this->isCapable('STARTTLS')) {
       if (!$this->startTLS()) {
+        $this->debug('ERROR: Server '.strtoupper($this->SMTPserver).' gave unexpected reply to STARTTLS command.');
         return false;
       }
     }
     elseif ($this->SMTPsecure) {
-      $this->debug('ERROR: User configuration requires secure connection.');
+      $this->debug('ERROR: Server '.strtoupper($this->SMTPserver).' does not support STARTTLS.');
       return false;
     }
 
@@ -449,6 +450,7 @@ class universalPHPmailer {
 
     if ($this->isCapable('AUTH')) {
       if (!$this->authenticate()) {
+        $this->debug('ERROR: Authentication failed.');
         return false;
       }
     }
@@ -1106,7 +1108,7 @@ class universalPHPmailer {
         $new[$i] .= $ch;
       }
       # Check length
-      if (mb_strlen($new[$i]) > self::MB_LEN_MAX) {
+      if (mb_strlen($new[$i]) == self::MB_LEN_MAX) {
         $i++;
       }
     }
