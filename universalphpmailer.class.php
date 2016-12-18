@@ -2,7 +2,7 @@
 /**
  * Universal PHP Mailer
  *
- * @version    0.10.4 (2016-12-17 22:08:00 GMT)
+ * @version    0.10.5 (2016-12-18 00:06:00 GMT)
  * @author     Peter Kahl <peter.kahl@colossalmind.com>
  * @copyright  2016 Peter Kahl
  * @license    Apache License, Version 2.0
@@ -39,7 +39,7 @@ class universalPHPmailer {
    * Version
    * @var string
    */
-  const VERSION = '0.10.4';
+  const VERSION = '0.10.5';
 
   /**
    * Method used to send mail
@@ -71,7 +71,7 @@ class universalPHPmailer {
    * If you're using a remote SMTP server, you should be using secure
    * connection.
    */
-  public $SMTPsecure     = false;
+  public $forceSMTPsecure = false;
 
   /**
    * Filename (incl. path) of CA certificate
@@ -79,7 +79,7 @@ class universalPHPmailer {
    * You may download and install on your server this Mozilla bundle:
    * <https://raw.githubusercontent.com/bagder/ca-bundle/master/ca-bundle.crt>
    */
-  public $CAfile;
+  public $CAfile         = '';
 
   /**
    * Our hostname for SMTP HELO
@@ -101,7 +101,7 @@ class universalPHPmailer {
    * @var boolean
    * Consider disabling for better performance.
    */
-  public $debugEnable = false;
+  public $debugEnable = true;
 
   /**
    * Method of debug
@@ -114,7 +114,7 @@ class universalPHPmailer {
    * Local server timezone offset from GMT in seconds.
    * Used for timestamp in logs.
    * @var integer
-   * Value 0 represents GMT.
+   * Value 0 corresponds to GMT timezone.
    */
   public $serverTZoffset = 0;
 
@@ -274,8 +274,6 @@ class universalPHPmailer {
 
   private $CounterSuccess;
 
-  private $CounterFail;
-
   private $last_reply;
 
   private $mtypes;
@@ -338,7 +336,6 @@ class universalPHPmailer {
           $this->CounterSuccess++;
           return $this->messageId; # On success returns message ID.
         }
-        $this->CounterFail++;
         return false;
       #########################################
       default:
@@ -377,14 +374,16 @@ class universalPHPmailer {
     # Start the stopwatch, counters.
     $this->EpochConnectionOpened = microtime(true);
     $this->CounterSuccess = 0;
-    $this->CounterFail = 0;
 
     $this->debug('#########################################################');
 
     $context = stream_context_create();
 
-    if ($this->SMTPsecure) {
+    if ($this->forceSMTPsecure) {
       if (!empty($this->CAfile)) {
+        #----
+        $this->debug('Using CA certificate file '.$this->CAfile);
+        #----
         stream_context_set_option($context, 'ssl', 'cafile',            $this->CAfile);
         stream_context_set_option($context, 'ssl', 'verify_host',       true);
         stream_context_set_option($context, 'ssl', 'verify_peer',       true);
@@ -436,12 +435,16 @@ class universalPHPmailer {
     #---------------------------------------------------------
 
     if ($this->isCapable('STARTTLS')) {
+      if (!$this->forceSMTPsecure && (!empty($this->CAfile) || !empty($this->SMTPusername) || !empty($this->SMTPpassword))) {
+        $this->debug('ERROR: SMTPsecure is FALSE (disabled).');
+        return false;
+      }
       if (!$this->startTLS()) {
         $this->debug('ERROR: Server '.strtoupper($this->SMTPserver).' gave unexpected reply to STARTTLS command.');
         return false;
       }
     }
-    elseif ($this->SMTPsecure) {
+    elseif ($this->forceSMTPsecure) {
       $this->debug('ERROR: Server '.strtoupper($this->SMTPserver).' does not support STARTTLS.');
       return false;
     }
@@ -543,6 +546,7 @@ class universalPHPmailer {
       $method |= STREAM_CRYPTO_METHOD_TLSv1_2_CLIENT;
       $method |= STREAM_CRYPTO_METHOD_TLSv1_1_CLIENT;
     }
+    $this->debug('Selected CRYPTO METHOD '.$method);
     stream_socket_enable_crypto($this->SMTPsocket, true, $method);
 
     if (!$this->sendCommand('EHLO '.$this->SMTPhelo, 250)) {
@@ -596,7 +600,7 @@ class universalPHPmailer {
 
     $this->debug('---------------------------------------------------------');
 
-    $this->debug('MESSAGES-SENT: '.$this->CounterSuccess.'; MESSAGES-FAILED: '.$this->CounterFail.'; CONNECT-TIME: '.$this->benchmark($this->EpochConnectionOpened));
+    $this->debug('MESSAGES-SENT: '.$this->CounterSuccess.'; CONNECTION-TIME: '.$this->benchmark($this->EpochConnectionOpened));
 
     fclose($this->SMTPsocket);
     $this->SMTPsocket = null;
