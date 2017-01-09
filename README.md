@@ -3,13 +3,13 @@ Super simple yet very powerful PHP mailer. It can use the PHP `mail()` function 
 
 ##Universal?
 
-This doesn't mean that it works in every configuration and every situation.
+`Universal` doesn't mean that it works in every configuration and every situation.
 
 It means that this mailer is capable of sending anything. You can use it to send very simple mail and even some very complex content combinations. Just give it whatever you have and fire it off! It will automatically configure itself to compose the correct MIME mail string with whatever parts and multiparts are appropriate.
 
 When using the `SMTP` method, the mailer reuses the same socket connection for sending multiple messages, thus achieving better efficiency than the `mail()` function method.
 
-These are the possible combinations (automatic configurations):
+These are the possible combinations (automatically configured):
 
 ##Non-multipart mail:
 - only one `attachment`
@@ -22,19 +22,31 @@ These are the possible combinations (automatic configurations):
 - `text/html`  + `inline images` + zero or more `attachment`
 - `text/plain` + `text/html` + `inline images` + zero or more `attachment`
 
-##Security
+---
+
+#Security
 
 This package applies some measures in order to mitigate malicious abuse attempts. However, it is advisable that you always validate and/or sanitise all user input.
 
-##Email Address Format
+You should validate and santise all email addresses.
+
+You should filter out (sanitise) line breaks (\n) from header strings.
+
+---
+
+#Email Address Format
 
 This package requires that email addresses be compliant with RFC5322, i.e. contain only printable ASCII characters. If you intend to use IDN and Unicode character email addresses, they must be converted to ASCII.
 
-##Email Address Validation
+---
+
+#Email Address Validation
 
 This package does not validate email addresses. Therefore, you should validate all email addresses before applying them to this package.
 
 ---
+
+#Usage
 
 How to send `text/plain`:
 ```php
