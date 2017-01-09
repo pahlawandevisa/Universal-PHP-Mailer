@@ -2,7 +2,7 @@
 /**
  * Universal PHP Mailer
  *
- * @version    0.11.1 (2017-01-09 04:25:00 GMT)
+ * @version    0.11.2 (2017-01-09 04:36:00 GMT)
  * @author     Peter Kahl <peter.kahl@colossalmind.com>
  * @license    Apache License, Version 2.0
  *
@@ -38,7 +38,7 @@ class universalPHPmailer {
    * Version
    * @var string
    */
-  const VERSION = '0.11.1';
+  const VERSION = '0.11.2';
 
   /**
    * Method used to send mail
@@ -307,10 +307,6 @@ class universalPHPmailer {
     $this->subject   = $this->sanitizeHeader($this->subject);
 
     $this->composeMessage();
-
-    foreach ($this->mimeHeaders as $hk => $hv) {
-      $this->mimeHeaders[$hk] = $this->sanitizeHeader($hv);
-    }
 
     if ($this->mailMethod == 'smtp' && !$this->isConnectionOpen()) {
       if (!$this->SMTPconnectionOpen()) {
@@ -721,6 +717,8 @@ class universalPHPmailer {
 
     if (!empty($this->customHeaders) && is_array($this->customHeaders)) {
       foreach ($this->customHeaders as $key => $val) {
+        $key = $this->sanitizeHeader($key);
+        $val = $this->sanitizeHeader($val);
         $this->mimeHeaders[] = $this->encodeHeader($key, $val);
       }
     }
