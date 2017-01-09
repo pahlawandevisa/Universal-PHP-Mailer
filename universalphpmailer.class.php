@@ -125,6 +125,10 @@ class universalPHPmailer {
 
   /**
    * Recipeint's email address
+   * Must comply with RFC5322 (only printable ASCII and '@').
+   * IDN and Unicode addresses must be converted to ASCII.
+   * It it advised that you validate all email adresses prior to using
+   * this package.
    * @var string
    */
   public $toEmail;
@@ -137,6 +141,10 @@ class universalPHPmailer {
 
   /**
    * Sender's email address
+   * Must comply with RFC5322 (only printable ASCII and '@').
+   * IDN and Unicode addresses must be converted to ASCII.
+   * It it advised that you validate all email adresses prior to using
+   * this package.
    * @var string
    */
   public $fromEmail;
@@ -175,6 +183,11 @@ class universalPHPmailer {
    * If you define email address containing header with a display name, make
    * sure you format the display name per RFC5322, or just use the method
    * 'formatDisplayName' for doing so.
+   *
+   * All email addresses must comply with RFC5322 (only printable ASCII and '@').
+   * IDN and Unicode addresses must be converted to ASCII.
+   * It it advised that you validate all email adresses prior to using
+   * this package.
    */
   public $customHeaders;
 

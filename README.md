@@ -22,6 +22,17 @@ These are the possible combinations (automatic configurations):
 - `text/html`  + `inline images` + zero or more `attachment`
 - `text/plain` + `text/html` + `inline images` + zero or more `attachment`
 
+##Security
+
+This package applies some measures in order to mitigate malicious abuse attempts. However, it is advisable that you always validate and/or sanitise all user input.
+
+##Email Address Format
+
+This package requires that email addresses be compliant with RFC5322, i.e. contain only printable ASCII characters. If you intend to use IDN and Unicode character email addresses, they must be converted to ASCII.
+
+##Email Address Validation
+
+This package does not validate email addresses. Therefore, you should validate all email addresses before applying them to this package.
 
 ---
 
