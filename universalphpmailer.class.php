@@ -2,12 +2,11 @@
 /**
  * Universal PHP Mailer
  *
- * @version    0.10.5 (2016-12-18 00:06:00 GMT)
+ * @version    0.11 (2017-01-09 03:56:00 GMT)
  * @author     Peter Kahl <peter.kahl@colossalmind.com>
- * @copyright  2016 Peter Kahl
  * @license    Apache License, Version 2.0
  *
- * Copyright 2016 Peter Kahl
+ * Copyright 2016-2017 Peter Kahl
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,7 +38,7 @@ class universalPHPmailer {
    * Version
    * @var string
    */
-  const VERSION = '0.10.5';
+  const VERSION = '0.11';
 
   /**
    * Method used to send mail
@@ -300,14 +299,17 @@ class universalPHPmailer {
 
   public function sendMessage() {
 
+    $this->toEmail   = $this->sanitizeEmail($this->toEmail);
+    $this->fromEmail = $this->sanitizeEmail($this->fromEmail);
+
+    $this->composeMessage();
+
     if ($this->mailMethod == 'smtp' && !$this->isConnectionOpen()) {
       if (!$this->SMTPconnectionOpen()) {
         $this->debug('Failed to establish SMTP connection.');
         return false;
       }
     }
-
-    $this->composeMessage();
 
     switch ($this->mailMethod) {
       #########################################
@@ -680,6 +682,18 @@ class universalPHPmailer {
 
   #===================================================================
 
+  private function sanitizeEmail($email) {
+    return filter_var($email, FILTER_SANITIZE_EMAIL);
+  }
+
+  #===================================================================
+
+  private function sanitizeHeader($str) {
+    return preg_replace('/(?:\n|\r|\t|%0A|%0D|%08|%09)+/', '', $str);
+  }
+
+  #===================================================================
+
   private function composeMessage() {
 
     $this->mimeHeaders = array();
@@ -705,6 +719,10 @@ class universalPHPmailer {
 
     $this->mimeHeaders[] = $this->foldLine('X-Mailer: universalPHPmailer/'.self::VERSION.' (https://github.com/peterkahl/Universal-PHP-Mailer)');
     $this->mimeHeaders[] = 'MIME-Version: 1.0';
+
+    foreach ($this->mimeHeaders as $hk => $hv) {
+      $this->mimeHeaders[$hk] = $this->sanitizeHeader($hv);
+    }
 
     $multiTypes = array();
     $i = -1;
