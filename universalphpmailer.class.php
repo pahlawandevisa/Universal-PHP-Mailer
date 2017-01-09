@@ -2,7 +2,7 @@
 /**
  * Universal PHP Mailer
  *
- * @version    0.11 (2017-01-09 03:56:00 GMT)
+ * @version    0.11.1 (2017-01-09 04:25:00 GMT)
  * @author     Peter Kahl <peter.kahl@colossalmind.com>
  * @license    Apache License, Version 2.0
  *
@@ -38,7 +38,7 @@ class universalPHPmailer {
    * Version
    * @var string
    */
-  const VERSION = '0.11';
+  const VERSION = '0.11.1';
 
   /**
    * Method used to send mail
@@ -302,7 +302,15 @@ class universalPHPmailer {
     $this->toEmail   = $this->sanitizeEmail($this->toEmail);
     $this->fromEmail = $this->sanitizeEmail($this->fromEmail);
 
+    $this->toName    = $this->sanitizeHeader($this->toName);
+    $this->fromName  = $this->sanitizeHeader($this->fromName);
+    $this->subject   = $this->sanitizeHeader($this->subject);
+
     $this->composeMessage();
+
+    foreach ($this->mimeHeaders as $hk => $hv) {
+      $this->mimeHeaders[$hk] = $this->sanitizeHeader($hv);
+    }
 
     if ($this->mailMethod == 'smtp' && !$this->isConnectionOpen()) {
       if (!$this->SMTPconnectionOpen()) {
@@ -689,7 +697,7 @@ class universalPHPmailer {
   #===================================================================
 
   private function sanitizeHeader($str) {
-    return preg_replace('/(?:\n|\r|\t|%0A|%0D|%08|%09)+/', '', $str);
+    return preg_replace('/(?:\n|\r|\t|%0A|%0D|%08|%09)+/i', '', $str);
   }
 
   #===================================================================
@@ -719,10 +727,6 @@ class universalPHPmailer {
 
     $this->mimeHeaders[] = $this->foldLine('X-Mailer: universalPHPmailer/'.self::VERSION.' (https://github.com/peterkahl/Universal-PHP-Mailer)');
     $this->mimeHeaders[] = 'MIME-Version: 1.0';
-
-    foreach ($this->mimeHeaders as $hk => $hv) {
-      $this->mimeHeaders[$hk] = $this->sanitizeHeader($hv);
-    }
 
     $multiTypes = array();
     $i = -1;
