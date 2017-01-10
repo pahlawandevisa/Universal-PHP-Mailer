@@ -2,7 +2,7 @@
 /**
  * Universal PHP Mailer
  *
- * @version    0.11.2 (2017-01-09 04:36:00 GMT)
+ * @version    0.12 (2017-01-10 22:51:00 GMT)
  * @author     Peter Kahl <peter.kahl@colossalmind.com>
  * @license    Apache License, Version 2.0
  *
@@ -38,7 +38,7 @@ class universalPHPmailer {
    * Version
    * @var string
    */
-  const VERSION = '0.11.2';
+  const VERSION = '0.12';
 
   /**
    * Method used to send mail
@@ -1006,9 +1006,24 @@ class universalPHPmailer {
     }
     $a = str_replace('.', '', microtime(true));
     $a = strtoupper(base_convert(dechex($a), 16, 36));
-    $b = strtoupper(base_convert(bin2hex(random_bytes(8)), 16, 36));
+    $b = strtoupper(base_convert($this->ranStr(8), 16, 36));
     $this->messageId = $a.'.'.$b.'@'.$this->hostName;
     return 'Message-ID: <'.$this->messageId.'>';
+  }
+
+  #===================================================================
+
+  private function ranStr($len) {
+    if (function_exists('random_bytes')) {
+      return bin2hex(random_bytes($len));
+    }
+    if (function_exists('mcrypt_create_iv')) {
+      return bin2hex(mcrypt_create_iv($len, MCRYPT_DEV_URANDOM));
+    }
+    if (function_exists('openssl_random_pseudo_bytes')) {
+      return bin2hex(openssl_random_pseudo_bytes($len));
+    }
+    throw new Exception('Failed to generate random string');
   }
 
   #===================================================================
