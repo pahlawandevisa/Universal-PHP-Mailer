@@ -32,7 +32,7 @@ You should filter out (sanitise) line breaks (\n) from header strings.
 
 #Email Address Format
 
-This package requires that email addresses be compliant with RFC5322, i.e. contain only printable ASCII characters. If you intend to use IDN and Unicode character email addresses, they must be converted to ASCII.
+This package requires that email addresses be compliant with RFC5322, i.e. contain only printable ASCII characters. If you intend to use IDN and Unicode character email addresses, you must convert them to ASCII before applying them to this package.
 
 ---
 
