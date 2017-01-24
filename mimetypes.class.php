@@ -2,12 +2,12 @@
 /**
  * MIME Types
  *
- * @version    0.1 (2016-12-13 08:42:00 GMT)
+ * @version    0.2 (2017-01-24 01:02:00 GMT)
  * @author     Peter Kahl <peter.kahl@colossalmind.com>
- * @copyright  2016 Peter Kahl
+ * @copyright  2016-2017 Peter Kahl
  * @license    Apache License, Version 2.0
  *
- * Copyright 2016 Peter Kahl
+ * Copyright 2016-2017 Peter Kahl
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,9 +25,9 @@
 
 class MIMEtypes {
 
-  public function getType($ext) {
-    if (array_key_exists($ext, $this->mimeType)) {
-      return $this->mimeType[$ext][0];
+  public static function getType($ext) {
+    if (array_key_exists($ext, self::$mimeType)) {
+      return self::$mimeType[$ext][0];
     }
     throw new Exception('Unknown mime type for given extension');
   }
@@ -38,7 +38,7 @@ class MIMEtypes {
    * https://gist.github.com/nimasdj/801b0b1a50112ea6a997
    *
    */
-  private $mimeType = array(
+  private static $mimeType = array(
     '3dm' => array('x-world/x-3dmf'),
     '3dmf' => array('x-world/x-3dmf'),
     '3dml' => array('text/vnd.in3d.3dml'),
@@ -1263,6 +1263,4 @@ class MIMEtypes {
     'zsh' => array('text/x-script.zsh'),
     '123' => array('application/vnd.lotus-1-2-3'),
   );
-
 }
-

@@ -2,7 +2,7 @@
 /**
  * Universal PHP Mailer
  *
- * @version    0.12 (2017-01-10 22:51:00 GMT)
+ * @version    1.0 (2017-01-24 01:04:00 GMT)
  * @author     Peter Kahl <peter.kahl@colossalmind.com>
  * @license    Apache License, Version 2.0
  *
@@ -38,7 +38,7 @@ class universalPHPmailer {
    * Version
    * @var string
    */
-  const VERSION = '0.12';
+  const VERSION = '1.0';
 
   /**
    * Method used to send mail
@@ -706,7 +706,7 @@ class universalPHPmailer {
   #===================================================================
 
   private function sanitizeHeader($str) {
-    return preg_replace('/(?:\n|\r|\t|%0A|%0D|%08|%09)+/i', '', $str);
+    return preg_replace("/(?:\n|\r|\t|%0A|%0D|%08|%09)+/i", '', $str);
   }
 
   #===================================================================
@@ -888,9 +888,8 @@ class universalPHPmailer {
         $this->mimeBody      = $this->encodeBody(trim($this->textHtml));
       }
       elseif (!empty($this->attachment)) { # Only 1 attachment
-        $this->mtypes = new MIMEtypes;
         foreach ($this->attachment as $atk => $atv) {
-          $this->mimeHeaders[] = 'Content-Type: '.$this->mtypes->getType($atv['file-extension']).';';
+          $this->mimeHeaders[] = 'Content-Type: '.MIMEtypes::getType($atv['file-extension']).';';
           $this->mimeHeaders[] = "\tname=\"".$atv['original-filename'].'"';
           $this->mimeHeaders[] = 'Content-Transfer-Encoding: base64';
           $this->mimeHeaders[] = 'Content-Disposition: attachment;';
@@ -910,11 +909,10 @@ class universalPHPmailer {
 
   private function generateInlineImageParts($boundaryKey) {
     $str = '';
-    $this->mtypes = new MIMEtypes;
     foreach ($this->inlineImage as $key => $val) {
       $str .= '--'.$this->getBoundary($boundaryKey).self::CRLF;
       $str .= 'Content-ID: <'.$val['content-id'].'>'.self::CRLF;
-      $str .= 'Content-Type: '.$this->mtypes->getType($val['file-extension']).'; name="'.$val['original-filename'].'"'.self::CRLF;
+      $str .= 'Content-Type: '.MIMEtypes::getType($val['file-extension']).'; name="'.$val['original-filename'].'"'.self::CRLF;
       $str .= 'Content-Transfer-Encoding: base64'.self::CRLF;
       $str .= 'Content-Disposition: inline; filename="'.$val['original-filename'].'"'.self::CRLF;
       $str .= self::CRLF;
@@ -956,10 +954,9 @@ class universalPHPmailer {
 
   private function generateAttachmentParts($boundaryKey) {
     $str = '';
-    $this->mtypes = new MIMEtypes;
     foreach ($this->attachment as $key => $val) {
       $str .= '--'.$this->getBoundary($boundaryKey).self::CRLF;
-      $str .= 'Content-Type: '.$this->mtypes->getType($val['file-extension']).';'.self::CRLF;
+      $str .= 'Content-Type: '.MIMEtypes::getType($val['file-extension']).';'.self::CRLF;
       $str .= "\tname=\"".$val['original-filename'].'"'.self::CRLF;
       $str .= 'Content-Transfer-Encoding: base64'.self::CRLF;
       $str .= 'Content-Disposition: attachment;'.self::CRLF;
@@ -1324,5 +1321,3 @@ class universalPHPmailer {
   #===================================================================
 
 }
-
-
