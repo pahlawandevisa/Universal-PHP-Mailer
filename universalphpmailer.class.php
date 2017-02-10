@@ -2,7 +2,7 @@
 /**
  * Universal PHP Mailer
  *
- * @version    1.0 (2017-01-24 01:04:00 GMT)
+ * @version    1.1 (2017-02-08 00:01:00 GMT)
  * @author     Peter Kahl <peter.kahl@colossalmind.com>
  * @license    Apache License, Version 2.0
  *
@@ -38,7 +38,7 @@ class universalPHPmailer {
    * Version
    * @var string
    */
-  const VERSION = '1.0';
+  const VERSION = '1.1';
 
   /**
    * Method used to send mail
@@ -1242,16 +1242,27 @@ class universalPHPmailer {
     if (!empty($this->textEncoding) && in_array($this->textEncoding, array('quoted-printable', 'base64'))) {
       return;
     }
-    $this->textEncoding = 'base64';
+    $this->textEncoding = 'quoted-printable';
   }
 
   #===================================================================
 
   private function encodeBody($str) {
     if ($this->textEncoding == 'quoted-printable') {
-      return quoted_printable_encode($str).self::CRLF;
+      return $this->qpEncode($str).self::CRLF;
     }
     return chunk_split(base64_encode($str), self::WRAP_LEN, self::CRLF);
+  }
+
+  #===================================================================
+
+  /**
+   * Dot stuffed quoted printable encode
+   *
+   */
+  private function qpEncode($str) {
+    $str = quoted_printable_encode($str);
+    return preg_replace('/'.self::CRLF.'\./', self::CRLF.'..', $str);
   }
 
   #===================================================================
