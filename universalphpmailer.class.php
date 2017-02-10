@@ -2,7 +2,7 @@
 /**
  * Universal PHP Mailer
  *
- * @version    1.1 (2017-02-08 00:01:00 GMT)
+ * @version    1.2 (2017-02-08 00:19:00 GMT)
  * @author     Peter Kahl <peter.kahl@colossalmind.com>
  * @license    Apache License, Version 2.0
  *
@@ -38,7 +38,7 @@ class universalPHPmailer {
    * Version
    * @var string
    */
-  const VERSION = '1.1';
+  const VERSION = '1.2';
 
   /**
    * Method used to send mail
@@ -1171,7 +1171,7 @@ class universalPHPmailer {
    * https://tools.ietf.org/html/rfc2047
    *
    */
-  private function encodeRFC2047($str, $scheme = 'b') {
+  private function encodeRFC2047($str, $scheme = 'q') {
     if (strtolower($scheme) == 'b') {
       return '=?'.self::CHARSET.'?B?'.base64_encode($str).'?=';
     }
