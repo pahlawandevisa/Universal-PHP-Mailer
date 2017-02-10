@@ -2,7 +2,7 @@
 /**
  * Universal PHP Mailer
  *
- * @version    1.2 (2017-02-08 00:19:00 GMT)
+ * @version    1.3 (2017-02-08 01:16:00 GMT)
  * @author     Peter Kahl <peter.kahl@colossalmind.com>
  * @license    Apache License, Version 2.0
  *
@@ -38,7 +38,7 @@ class universalPHPmailer {
    * Version
    * @var string
    */
-  const VERSION = '1.2';
+  const VERSION = '1.3';
 
   /**
    * Method used to send mail
@@ -1171,14 +1171,8 @@ class universalPHPmailer {
    * https://tools.ietf.org/html/rfc2047
    *
    */
-  private function encodeRFC2047($str, $scheme = 'q') {
-    if (strtolower($scheme) == 'b') {
-      return '=?'.self::CHARSET.'?B?'.base64_encode($str).'?=';
-    }
-    if (strtolower($scheme) == 'q') {
-      return '=?'.self::CHARSET.'?Q?'.str_replace(array(' ','?','_'), array('=20','=3F','=5F'), quoted_printable_encode($str)).'?=';
-    }
-    throw new Exception('Illegal value of argument scheme');
+  private function encodeRFC2047($str) {
+    return '=?'.self::CHARSET.'?B?'.base64_encode($str).'?=';
   }
 
   #===================================================================
