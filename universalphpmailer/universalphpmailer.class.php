@@ -2,11 +2,10 @@
 /**
  * Universal PHP Mailer
  *
- * @version    1.3 (2017-02-08 01:16:00 GMT)
+ * @version    1.4 (2017-02-21 02:36:00 GMT)
  * @author     Peter Kahl <peter.kahl@colossalmind.com>
  * @license    Apache License, Version 2.0
- *
- * Copyright 2016-2017 Peter Kahl
+ * @copyright  2016-2017 Peter Kahl
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,13 +31,15 @@
  * <https://github.com/PHPMailer/PHPMailer/blob/master/class.smtp.php>
  */
 
+namespace universalPHPmailer;
+
 class universalPHPmailer {
 
   /**
    * Version
    * @var string
    */
-  const VERSION = '1.3';
+  const VERSION = '1.4';
 
   /**
    * Method used to send mail

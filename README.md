@@ -1,5 +1,5 @@
 # Universal PHP Mailer
-Simple yet powerful PHP mailer. It can use the PHP `mail()` function or the `SMTP` method.
+Simple yet powerful PHP mailer. It uses the PHP `mail()` function or the `SMTP` method.
 
 It is capable of sending any type of content, including plain text, html, inline image, and any kind of attachment, hence `Universal`. You can use it to send very simple mail and even some very complex content combinations. Just give it whatever you have and fire it off. It will **automatically configure itself** to compose the correct MIME mail string with whatever parts and multiparts are appropriate.
 
@@ -46,7 +46,7 @@ This package does not validate email addresses. Therefore, you should validate a
 
 How to send `text/plain`:
 ```php
-require 'universalphpmailer.class.php';
+use universalphpmailer\universalphpmailer;
 
 $mailor = new universalPHPmailer;
 
@@ -76,7 +76,7 @@ if (!empty($msgID)) {
 
 How to send `text/html`:
 ```php
-require 'universalphpmailer.class.php';
+use universalphpmailer\universalphpmailer;
 
 $mailor = new universalPHPmailer;
 
@@ -105,8 +105,7 @@ if (!empty($msgID)) {
 
 How to send `text/html` + `inline images`:
 ```php
-require 'universalphpmailer.class.php';
-require 'mimetypes.class.php';
+use universalphpmailer\universalphpmailer;
 
 $mailor = new universalPHPmailer;
 
@@ -140,8 +139,7 @@ if (!empty($msgID)) {
 
 How to send `text/plain` + `text/html` + `inline images`:
 ```php
-require 'universalphpmailer.class.php';
-require 'mimetypes.class.php';
+use universalphpmailer\universalphpmailer;
 
 $mailor = new universalPHPmailer;
 
@@ -182,8 +180,7 @@ if (!empty($msgID)) {
 
 How to send `text/plain` + `text/html` + `inline images` + `attachment`:
 ```php
-require 'universalphpmailer.class.php';
-require 'mimetypes.class.php';
+use universalphpmailer\universalphpmailer;
 
 $mailor = new universalPHPmailer;
 
@@ -224,11 +221,11 @@ if (!empty($msgID)) {
 
 ---
 
-How to send `text/html` + `inline images` in a loop (multiple recipients):
+How to send `text/html` + `inline images` in a loop (multiple recipients, high volume) while reusing the socket connection:
 ```php
-require 'universalphpmailer.class.php';
-require 'mimetypes.class.php';
+use universalphpmailer\universalphpmailer;
 
+# Instatiate outside of the loop
 $mailor = new universalPHPmailer;
 
 $mailor->subject   = 'Weekly best deal newsletter';
@@ -284,7 +281,7 @@ If you want to be sure that display name in headers is per RFC5322, use the meth
 
 (Here I am using an example of `text/plain` mail):
 ```php
-require 'universalphpmailer.class.php';
+use universalphpmailer\universalphpmailer;
 
 $mailor = new universalPHPmailer;
 

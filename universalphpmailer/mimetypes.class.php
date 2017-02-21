@@ -2,12 +2,11 @@
 /**
  * MIME Types
  *
- * @version    0.2 (2017-01-24 01:02:00 GMT)
+ * @version    0.3 (2017-02-21 02:36:00 GMT)
  * @author     Peter Kahl <peter.kahl@colossalmind.com>
  * @copyright  2016-2017 Peter Kahl
  * @license    Apache License, Version 2.0
- *
- * Copyright 2016-2017 Peter Kahl
+ * @copyright  2016-2017 Peter Kahl
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +21,8 @@
  * limitations under the License.
  *
  */
+
+namespace universalPHPmailer;
 
 class MIMEtypes {
 
