@@ -2,10 +2,10 @@
 /**
  * Universal PHP Mailer
  *
- * @version    1.4 (2017-02-21 02:36:00 GMT)
+ * @version    1.4.1 (2017-02-22 09:06:00 GMT)
  * @author     Peter Kahl <peter.kahl@colossalmind.com>
- * @license    Apache License, Version 2.0
  * @copyright  2016-2017 Peter Kahl
+ * @license    Apache License, Version 2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,7 +39,7 @@ class universalPHPmailer {
    * Version
    * @var string
    */
-  const VERSION = '1.4';
+  const VERSION = '1.4.1';
 
   /**
    * Method used to send mail
@@ -1012,6 +1012,9 @@ class universalPHPmailer {
   #===================================================================
 
   private function ranStr($len) {
+    if (function_exists('\Sodium\randombytes_buf')) {
+      return \Sodium\bin2hex(\Sodium\randombytes_buf($len));
+    }
     if (function_exists('random_bytes')) {
       return bin2hex(random_bytes($len));
     }
