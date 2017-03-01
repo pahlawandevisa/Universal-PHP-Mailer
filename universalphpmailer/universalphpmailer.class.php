@@ -2,7 +2,7 @@
 /**
  * Universal PHP Mailer
  *
- * @version    1.4.2 (2017-02-28 09:41:00 GMT)
+ * @version    1.4.3 (2017-03-01 02:29:00 GMT)
  * @author     Peter Kahl <peter.kahl@colossalmind.com>
  * @copyright  2016-2017 Peter Kahl
  * @license    Apache License, Version 2.0
@@ -39,7 +39,7 @@ class universalPHPmailer {
    * Version
    * @var string
    */
-  const VERSION = '1.4.2';
+  const VERSION = '1.4.3';
 
   /**
    * Method used to send mail
@@ -1026,7 +1026,7 @@ class universalPHPmailer {
       $str = bin2hex(openssl_random_pseudo_bytes($bytes));
     }
     else {
-      $str = sha1(microtime(true));
+      $str = substr(sha1(mt_rand().$this->toEmail), 16);
     }
     #----
     return substr(strtoupper(base_convert($str, 16, 36)), -$len);
