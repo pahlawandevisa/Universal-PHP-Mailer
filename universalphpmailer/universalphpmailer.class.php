@@ -2,7 +2,7 @@
 /**
  * Universal PHP Mailer
  *
- * @version    1.4.3 (2017-03-01 02:29:00 GMT)
+ * @version    1.5 (2017-03-01 09:50:00 GMT)
  * @author     Peter Kahl <peter.kahl@colossalmind.com>
  * @copyright  2016-2017 Peter Kahl
  * @license    Apache License, Version 2.0
@@ -39,7 +39,7 @@ class universalPHPmailer {
    * Version
    * @var string
    */
-  const VERSION = '1.4.3';
+  const VERSION = '1.5';
 
   /**
    * Method used to send mail
@@ -312,6 +312,10 @@ class universalPHPmailer {
   #===================================================================
 
   public function sendMessage() {
+    # Validate
+    if ($this->mailMethod != 'smtp' && $this->mailMethod != 'mail') {
+      throw new Exception('Illegal value of property mailMethod');
+    }
 
     $this->toEmail   = $this->sanitizeEmail($this->toEmail);
     $this->fromEmail = $this->sanitizeEmail($this->fromEmail);
@@ -358,8 +362,6 @@ class universalPHPmailer {
         }
         return false;
       #########################################
-      default:
-        throw new Exception('Illegal value of property mailMethod');
     }
   }
 
@@ -1260,11 +1262,14 @@ class universalPHPmailer {
   #===================================================================
 
   /**
-   * Dot stuffed quoted printable encode
+   * quoted-printable encoding is being dot-stuffed only for 'smtp'
    *
    */
   private function qpEncode($str) {
     $str = quoted_printable_encode($str);
+    if ($this->mailMethod == 'mail') {
+      return $str;
+    }
     return preg_replace('/'.self::CRLF.'\./', self::CRLF.'..', $str);
   }
 
