@@ -1,15 +1,13 @@
 #Universal PHP Mailer
-Simple yet powerful PHP mailer. It uses the PHP `mail()` function or the `SMTP` method.
-
-It is capable of sending any type of content, including plain text, html, inline image, and any kind of attachment, hence `Universal`.
+Easy to use yet powerful PHP mailer, capable of sending any type of content including plain text, html, inline images, and any kind and any number of attachments, hence `Universal`.
 
 ##Intelligent
-If you have ever tried composing multipart MIME mail, you know how cumbersome it can be. With **Universal PHP Mailer** you will no longer struggle figuring out where you put "this and that" content and within which boundary. **Universal PHP Mailer** is intelligent. Just give it whatever content you have and fire it off. It will **automatically configure itself** to compose the correct MIME mail string with whatever parts, multiparts and boundaries are appropriate.
+If you have ever tried composing multipart MIME mail, you will know how cumbersome it can be. With **Universal PHP Mailer** you will no longer struggle figuring out where you put "this and that" content and within which boundary and in which order. **Universal PHP Mailer** is intelligent. Just give it whatever content you have and fire it off. It will **automatically configure itself** to compose the correct MIME mail string with whatever parts, multiparts and boundaries are appropriate.
 
 ##Efficiency for High Volume Mailing (Bulk)
 When using the `SMTP` method, the mailer reuses the same socket connection for sending multiple messages, thus achieving better efficiency than the `mail()` function method.
 
-##These are the possible combinations (automatically configured):
+##These are the possible combinations of content this mailer can handle (that's virtually anything!):
 
 ###Non-multipart mail:
 - only one `attachment`
@@ -30,7 +28,7 @@ This package applies some measures in order to mitigate malicious abuse attempts
 
 You should validate and santise all email addresses.
 
-You should filter out (sanitise) line breaks (\n) from header strings.
+You should filter out (sanitise) line breaks (`\n`) from header strings.
 
 ---
 
