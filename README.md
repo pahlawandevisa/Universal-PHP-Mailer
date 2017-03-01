@@ -1,18 +1,22 @@
-# Universal PHP Mailer
+#Universal PHP Mailer
 Simple yet powerful PHP mailer. It uses the PHP `mail()` function or the `SMTP` method.
 
-It is capable of sending any type of content, including plain text, html, inline image, and any kind of attachment, hence `Universal`. You can use it to send very simple mail and even some very complex content combinations. Just give it whatever you have and fire it off. It will **automatically configure itself** to compose the correct MIME mail string with whatever parts and multiparts are appropriate.
+It is capable of sending any type of content, including plain text, html, inline image, and any kind of attachment, hence `Universal`.
 
+##Intelligent
+If you have ever tried composing multipart MIME mail, you know how cumbersome it can be. With **Universal PHP Mailer** you will no longer struggle figuring out where you put "this and that" content and within which boundary. **Universal PHP Mailer** is intelligent. Just give it whatever content you have and fire it off. It will **automatically configure itself** to compose the correct MIME mail string with whatever parts, multiparts and boundaries are appropriate.
+
+##Efficiency for High Volume Mailing (Bulk)
 When using the `SMTP` method, the mailer reuses the same socket connection for sending multiple messages, thus achieving better efficiency than the `mail()` function method.
 
-These are the possible combinations (automatically configured):
+##These are the possible combinations (automatically configured):
 
-##Non-multipart mail:
+###Non-multipart mail:
 - only one `attachment`
 - only one `text/plain`
 - only one `text/html`
 
-##Multipart mail:
+###Multipart mail:
 - two or more `attachment`
 - `text/plain` + `text/html` + zero or more `attachment`
 - `text/html`  + `inline images` + zero or more `attachment`
@@ -20,9 +24,9 @@ These are the possible combinations (automatically configured):
 
 ---
 
-#Security
+##Security
 
-This package applies some measures in order to mitigate malicious abuse attempts. However, it is advisable that you always validate and/or sanitise all user input.
+This package applies some measures in order to mitigate malicious abuse attempts. Despite this, it is advised that you always validate and/or sanitise all user input.
 
 You should validate and santise all email addresses.
 
@@ -30,19 +34,19 @@ You should filter out (sanitise) line breaks (\n) from header strings.
 
 ---
 
-#Email Address Format
+##Email Address Format
 
 This package requires that email addresses be compliant with RFC5322, i.e. contain only printable ASCII characters. If you intend to use IDN and Unicode character email addresses, you must convert them to ASCII before applying them to this package.
 
 ---
 
-#Email Address Validation
+##Email Address Validation
 
 This package does not validate email addresses. Therefore, you should validate all email addresses before applying them to this package.
 
 ---
 
-#Usage
+##Usage
 
 How to send `text/plain`:
 ```php
