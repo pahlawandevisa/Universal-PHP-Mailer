@@ -2,7 +2,7 @@
 /**
  * Universal PHP Mailer
  *
- * @version    1.5 (2017-03-01 09:50:00 GMT)
+ * @version    1.5.1 (2017-03-04 09:49:00 GMT)
  * @author     Peter Kahl <peter.kahl@colossalmind.com>
  * @copyright  2016-2017 Peter Kahl
  * @license    Apache License, Version 2.0
@@ -39,7 +39,7 @@ class universalPHPmailer {
    * Version
    * @var string
    */
-  const VERSION = '1.5';
+  const VERSION = '1.5.1';
 
   /**
    * Method used to send mail
@@ -1203,7 +1203,7 @@ class universalPHPmailer {
    *     need to set DKIM Canonicalization to 'relaxed'.
    */
   private function foldLine($str) {
-    if (!$this->isMultibyteString($str) && strlen($str) <= self::WRAP_LEN) {
+    if (strlen($str) <= self::WRAP_LEN) {
       return $str;
     }
     $arr = explode(self::CRLF, wordwrap($str, self::WRAP_LEN - 1, self::CRLF));
