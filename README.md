@@ -1,13 +1,13 @@
 #Universal PHP Mailer
 Easy to use yet powerful PHP mailer, capable of sending any type of content including plain text, html, inline images, and any kind and any number of attachments, hence `Universal`.
 
-##Intelligent
-If you have ever tried composing multipart MIME mail, you will know how cumbersome it can be. With **Universal PHP Mailer** you will no longer struggle figuring out where you put "this and that" content and within which boundary and in which order. **Universal PHP Mailer** is intelligent. Just give it whatever content you have and fire it off. It will **automatically configure itself** to compose the correct MIME mail string with whatever parts, multiparts and boundaries are appropriate.
+##Self-configuring
+If you have ever tried composing multipart MIME mail, you will know how cumbersome it can be. With **Universal PHP Mailer** you will no longer struggle figuring out where you put "this and that" content and within which boundary and in which order. **Universal PHP Mailer** is self-configuring. Just give it whatever content you have and fire it off. It will compose the correct MIME-compliant mail string with whatever parts, multiparts and boundaries are appropriate.
 
 ##Efficiency for High Volume Mailing (Bulk)
 When using the `SMTP` method, the mailer reuses the same socket connection for sending multiple messages, thus achieving better efficiency than the `mail()` function method.
 
-##These are the possible combinations of content this mailer can handle (that's virtually anything!):
+##Handles virtually anything:
 
 ###Non-multipart mail:
 - only one `attachment`
@@ -30,13 +30,9 @@ You should validate and santise all email addresses.
 
 You should filter out (sanitise) line breaks (`\n`) from header strings.
 
----
-
 ##Email Address Format
 
 This package requires that email addresses be compliant with RFC5322, i.e. contain only printable ASCII characters. If you intend to use IDN and Unicode character email addresses, you must convert them to ASCII before applying them to this package.
-
----
 
 ##Email Address Validation
 
@@ -74,8 +70,6 @@ if (!empty($msgID)) {
 
 ```
 
----
-
 How to send `text/html`:
 ```php
 use universalphpmailer\universalphpmailer;
@@ -102,8 +96,6 @@ if (!empty($msgID)) {
 }
 
 ```
-
----
 
 How to send `text/html` + `inline images`:
 ```php
@@ -136,8 +128,6 @@ if (!empty($msgID)) {
 }
 
 ```
-
----
 
 How to send `text/plain` + `text/html` + `inline images`:
 ```php
@@ -177,8 +167,6 @@ if (!empty($msgID)) {
 }
 
 ```
-
----
 
 How to send `text/plain` + `text/html` + `inline images` + `attachment`:
 ```php
@@ -220,8 +208,6 @@ if (!empty($msgID)) {
 }
 
 ```
-
----
 
 How to send `text/html` + `inline images` in a loop (multiple recipients, high volume) while reusing the socket connection:
 ```php
@@ -277,8 +263,6 @@ foreach ($recipientArr as $recipient) {
 
 ```
 
----
-
 If you want to be sure that display name in headers is per RFC5322, use the method `formatDisplayName`. This will avoid some undesired behaviour.
 
 (Here I am using an example of `text/plain` mail):
@@ -316,13 +300,8 @@ if (!empty($msgID)) {
 Peter Kahl had written much of the SMTP-related methods of this package as a result of inspiration from the following class and extends his thanks to the authors thereof:
 
 > PHPMailer RFC821 SMTP email transport class.
->
 > Implements RFC 821 SMTP commands and provides some utility methods for sending mail to an SMTP server.
->
 > @package PHPMailer
->
 > @author Chris Ryan
->
 > @author Marcus Bointon <phpmailer@synchromedia.co.uk>
->
 > <https://github.com/PHPMailer/PHPMailer/blob/master/class.smtp.php>
