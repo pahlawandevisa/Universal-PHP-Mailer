@@ -2,7 +2,7 @@
 /**
  * Universal PHP Mailer
  *
- * @version    1.5.2 (2017-03-08 01:35:00 GMT)
+ * @version    1.5.3 (2017-03-11 23:29:00 GMT)
  * @author     Peter Kahl <peter.kahl@colossalmind.com>
  * @copyright  2016-2017 Peter Kahl
  * @license    Apache License, Version 2.0
@@ -39,7 +39,7 @@ class universalPHPmailer {
    * Version
    * @var string
    */
-  const VERSION = '1.5.2';
+  const VERSION = '1.5.3';
 
   /**
    * Method used to send mail
@@ -1318,7 +1318,13 @@ class universalPHPmailer {
     if (strlen($str) > 1000) {
       $str = substr($str, 0, 1000).' ... [truncated]';
     }
-    file_put_contents($this->cacheDir . $this->logFilename, '['.gmdate("Y-m-d H:i:s", time() + $this->serverTZoffset).'] '. $str . PHP_EOL, FILE_APPEND | LOCK_EX);
+    file_put_contents($this->cacheDir . $this->logFilename, '['. gmdate("Y-m-d H:i:s", time() + $this->serverTZoffset) .'.'. $this->getMilliseconds() .'] '. $str . PHP_EOL, FILE_APPEND | LOCK_EX);
+  }
+
+  #===================================================================
+
+  private function getMilliseconds() {
+    return substr($this->endExplode('.', microtime(true)), 0, 3);
   }
 
   #===================================================================

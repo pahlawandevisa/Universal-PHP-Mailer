@@ -20,8 +20,6 @@ When using the `SMTP` method, the mailer reuses the same socket connection for s
 - `text/html`  + `inline images` + zero or more `attachment`
 - `text/plain` + `text/html` + `inline images` + zero or more `attachment`
 
----
-
 ##Security
 
 This package applies some measures in order to mitigate malicious abuse attempts. Despite this, it is advised that you always validate and/or sanitise all user input.
@@ -37,8 +35,6 @@ This package requires that email addresses be compliant with RFC5322, i.e. conta
 ##Email Address Validation
 
 This package does not validate email addresses. Therefore, you should validate all email addresses before applying them to this package.
-
----
 
 ##Usage
 
