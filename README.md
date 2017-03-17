@@ -1,26 +1,26 @@
-#Universal PHP Mailer
+# Universal PHP Mailer
 Easy to use yet powerful PHP mailer, capable of sending any type of content including plain text, html, inline images, and any kind and any number of attachments, hence `Universal`.
 
-##Self-configuring
+## Self-configuring
 If you have ever tried composing multipart MIME mail, you will know how cumbersome it can be. With **Universal PHP Mailer** you will no longer struggle figuring out where you put "this and that" content and within which boundary and in which order. **Universal PHP Mailer** is self-configuring. Just give it whatever content you have and fire it off. It will compose the correct MIME-compliant mail string with whatever parts, multiparts and boundaries are appropriate.
 
-##Efficiency for High Volume Mailing (Bulk)
+## Efficiency for High Volume Mailing (Bulk)
 When using the `SMTP` method, the mailer reuses the same socket connection for sending multiple messages, thus achieving better efficiency than the `mail()` function method.
 
-##Handles virtually anything:
+## Handles virtually anything:
 
-###Non-multipart mail:
+### Non-multipart mail:
 - only one `attachment`
 - only one `text/plain`
 - only one `text/html`
 
-###Multipart mail:
+### Multipart mail:
 - two or more `attachment`
 - `text/plain` + `text/html` + zero or more `attachment`
 - `text/html`  + `inline images` + zero or more `attachment`
 - `text/plain` + `text/html` + `inline images` + zero or more `attachment`
 
-##Security
+## Security
 
 This package applies some measures in order to mitigate malicious abuse attempts. Despite this, it is advised that you always validate and/or sanitise all user input.
 
@@ -28,15 +28,15 @@ You should validate and santise all email addresses.
 
 You should filter out (sanitise) line breaks (`\n`) from header strings.
 
-##Email Address Format
+## Email Address Format
 
 This package requires that email addresses be compliant with RFC5322, i.e. contain only printable ASCII characters. If you intend to use IDN and Unicode character email addresses, you must convert them to ASCII before applying them to this package.
 
-##Email Address Validation
+## Email Address Validation
 
 This package does not validate email addresses. Therefore, you should validate all email addresses before applying them to this package.
 
-##Usage
+## Usage
 
 How to send `text/plain`:
 ```php
@@ -291,7 +291,7 @@ if (!empty($msgID)) {
 
 ---
 
-#Acknowledgements
+## Acknowledgements
 
 Peter Kahl had written much of the SMTP-related methods of this package as a result of inspiration from the following class and extends his thanks to the authors thereof:
 
