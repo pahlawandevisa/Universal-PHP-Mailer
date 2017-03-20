@@ -1,5 +1,7 @@
  +-+-+-+-+-+-+-+-+-+ +-+-+-+ +-+-+-+-+-+-+
+
  |U|n|i|v|e|r|s|a|l| |P|H|P| |M|a|i|l|e|r|
+
  +-+-+-+-+-+-+-+-+-+ +-+-+-+ +-+-+-+-+-+-+
 
 Super easy to use yet powerful PHP mailer, capable of sending any type of content including plain text, html, inline images, and any kind and any number of attachments, hence `Universal`.
