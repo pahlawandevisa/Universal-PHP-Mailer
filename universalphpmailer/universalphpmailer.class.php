@@ -76,8 +76,9 @@ class universalPHPmailer {
   /**
    * Filename (incl. path) of CA certificate
    * @var string
-   * You may download and install on your server this Mozilla bundle:
-   * <https://raw.githubusercontent.com/bagder/ca-bundle/master/ca-bundle.crt>
+   * You may download and install on your server this Mozilla CA bundle
+   * fromt his page:
+   * <https://curl.haxx.se/docs/caextract.html>
    */
   public $CAfile         = '';
 
