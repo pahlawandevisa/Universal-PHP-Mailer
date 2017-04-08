@@ -1,5 +1,5 @@
 {
-    "name": "colossalmind/universalPHPmailer",
+    "name": "colossalmind/Universal-PHP-Mailer",
     "homepage": "https://github.com/peterkahl/Universal-PHP-Mailer",
     "license": "Apache",
     "authors": [
@@ -15,7 +15,7 @@
     },
     "autoload": {
         "psr-4": {
-            "universalPHPmailer": "universalphpmailer"
+            "Universal-PHP-Mailer": "universalphpmailer"
         }
     }
 }
