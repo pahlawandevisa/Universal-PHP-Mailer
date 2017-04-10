@@ -2,7 +2,7 @@
 /**
  * Universal PHP Mailer
  *
- * @version    1.5.4 (2017-03-12 08:58:00 GMT)
+ * @version    1.6 (2017-04-10 02:33:00 GMT)
  * @author     Peter Kahl <peter.kahl@colossalmind.com>
  * @copyright  2016-2017 Peter Kahl
  * @license    Apache License, Version 2.0
@@ -39,7 +39,7 @@ class universalPHPmailer {
    * Version
    * @var string
    */
-  const VERSION = '1.5.4';
+  const VERSION = '1.6';
 
   /**
    * Method used to send mail
@@ -93,9 +93,21 @@ class universalPHPmailer {
    */
   public $SMTPhelo = 'localhost';
 
-  public $logFilename = '/SMTP.log';
+  /**
+   * X-Mailer header
+   * @var possible values
+   * true (boolean) ......... default X-Mailer header will be inserted
+   * false (boolean) ........ X-Mailer header will not be inserted
+   * '' (empty string) ...... X-Mailer header will not be inserted
+   * 'Joe Blow\'s Mailer' ... given string will be used as X-Mailer header
+   */
+  public $Xmailer = true;
 
-  public $cacheDir = '/srv/cache';
+  /**
+   * Absolute path and file name of debug log
+   * @var string
+   */
+  public $logFilename = '/srv/cache/SMTP.log';
 
   /**
    * Enable debug
@@ -740,7 +752,13 @@ class universalPHPmailer {
       }
     }
 
-    $this->mimeHeaders[] = $this->foldLine('X-Mailer: universalPHPmailer/'.self::VERSION.' (https://github.com/peterkahl/Universal-PHP-Mailer)');
+    if ($this->Xmailer === true) {
+      $this->mimeHeaders[] = $this->foldLine('X-Mailer: universalPHPmailer/'.self::VERSION.' (https://github.com/peterkahl/Universal-PHP-Mailer)');
+    }
+    elseif (is_string($this->Xmailer) && strlen($this->Xmailer) > 0) {
+      $this->mimeHeaders[] = $this->foldLine('X-Mailer: '.$this->sanitizeHeader($this->Xmailer));
+    }
+
     $this->mimeHeaders[] = 'MIME-Version: 1.0';
 
     $multiTypes = array();
@@ -1320,7 +1338,7 @@ class universalPHPmailer {
       $str = substr($str, 0, 1000).' ... [truncated]';
     }
     list($sec, $usec) = explode('.', microtime(true));
-    file_put_contents($this->cacheDir . $this->logFilename, '['. gmdate("Y-m-d H:i:s", $sec + $this->serverTZoffset) .'.'. substr($usec, 0, 3) .'] '. $str . PHP_EOL, FILE_APPEND | LOCK_EX);
+    file_put_contents($this->logFilename, '['. gmdate("Y-m-d H:i:s", $sec + $this->serverTZoffset) .'.'. substr($usec, 0, 3) .'] '. $str . PHP_EOL, FILE_APPEND | LOCK_EX);
   }
 
   #===================================================================
