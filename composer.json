@@ -1,6 +1,6 @@
 {
     "name": "colossalmind/universalphpmailer",
-    "description": "Self-configuring PHP mailer, capable of sending any type of content including plain text, html, inline images, and any kind and any number of attachments",
+    "description": "Self-configuring PHP mailer, capable of sending any type of content including plain text, html, inline images, and any kind and any number of attachments.",
     "homepage": "https://github.com/peterkahl/Universal-PHP-Mailer",
     "license": "Apache License Version 2.0",
     "authors": [
