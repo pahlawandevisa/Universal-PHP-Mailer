@@ -2,7 +2,7 @@
 /**
  * Universal PHP Mailer
  *
- * @version    1.6 (2017-04-10 02:33:00 GMT)
+ * @version    1.7 (2017-04-12 23:54:00 GMT)
  * @author     Peter Kahl <peter.kahl@colossalmind.com>
  * @copyright  2016-2017 Peter Kahl
  * @license    Apache License, Version 2.0
@@ -39,7 +39,7 @@ class universalPHPmailer {
    * Version
    * @var string
    */
-  const VERSION = '1.6';
+  const VERSION = '1.7';
 
   /**
    * Method used to send mail
@@ -974,6 +974,19 @@ class universalPHPmailer {
 
   #===================================================================
 
+  /**
+   * Unsets (clears) existing inline images.
+   * This may be needed only when sending bulk mails in a loop and
+   * only when this class is instantiated before the bulk loop.
+   *
+   */
+  public function unsetInlineImages() {
+    $this->inlineImage    = array();
+    $this->inlineImageKey = 0;
+  }
+
+  #===================================================================
+
   private function generateAttachmentParts($boundaryKey) {
     $str = '';
     foreach ($this->attachment as $key => $val) {
@@ -1007,6 +1020,19 @@ class universalPHPmailer {
 
   #===================================================================
 
+  /**
+   * Unsets (clears) existing attachments.
+   * This may be needed only when sending bulk mails in a loop and
+   * only when this class is instantiated before the bulk loop.
+   *
+   */
+  public function unsetAttachments() {
+    $this->attachment    = array();
+    $this->attachmentKey = 0;
+  }
+
+  #===================================================================
+
   private function getBoundary($key) {
     if (empty($this->rbstr)) {
       $this->rbstr = strtoupper(sha1(microtime(true)));
@@ -1015,6 +1041,21 @@ class universalPHPmailer {
       $this->boundary[$key] = '__'.strtoupper(substr(sha1($key . microtime(true)), 0, 8)).':'.$this->rbstr.'__';
     }
     return $this->boundary[$key];
+  }
+
+  #===================================================================
+
+  /**
+   * Unsets (clears) existing boundary strings.
+   * This may be needed only when sending bulk mails in a loop and
+   * only when this class is instantiated before the bulk loop.
+   *
+   */
+  public function unsetBoundaries() {
+    unset($this->rbstr);
+    foreach ($this->boundary as $key => $val) {
+      unset($this->boundary[$key]);
+    }
   }
 
   #===================================================================

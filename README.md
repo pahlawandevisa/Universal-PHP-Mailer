@@ -213,7 +213,7 @@ How to send `text/html` + `inline images` in a loop (multiple recipients, high v
 ```php
 use universalPHPmailer\universalPHPmailer;
 
-# Instatiate outside of the loop
+# Instatiate outside of (before) the loop
 $mailor = new universalPHPmailer;
 
 $mailor->subject   = 'Weekly best deal newsletter';
@@ -245,6 +245,13 @@ foreach ($recipientArr as $recipient) {
 
   $mailor->toName    = $recipient['name'];
   $mailor->toEmail   = $recipient['email'];
+
+  # It is recommended to unset certain properties!
+  $mailor->unsetBoundaries();
+
+  # Unset these only if they are added inside the loop
+  //$mailor->unsetInlineImages();
+  //$mailor->unsetAttachments();
 
   $mailor->textHtml  = '<body>
     <p>Hi '.$recipient['name'].',</p>
