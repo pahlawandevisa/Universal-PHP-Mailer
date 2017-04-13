@@ -2,7 +2,7 @@
 /**
  * Universal PHP Mailer
  *
- * @version    1.7 (2017-04-12 23:54:00 GMT)
+ * @version    1.7 (2017-04-13 00:13:00 GMT)
  * @author     Peter Kahl <peter.kahl@colossalmind.com>
  * @copyright  2016-2017 Peter Kahl
  * @license    Apache License, Version 2.0
@@ -354,8 +354,10 @@ class universalPHPmailer {
         $headers = implode(self::CRLF, $this->mimeHeaders).self::CRLF;
         #----
         if (mail($to, $subject, $this->mimeBody, $headers, '-f'.$this->fromEmail) !== false) {
+          $this->unsetBoundaries();
           return $this->messageId; # On success returns message ID.
         }
+        $this->unsetBoundaries();
         return false;
       #########################################
       case 'smtp':
@@ -371,8 +373,10 @@ class universalPHPmailer {
         }
         if ($this->SMTPmail()) {
           $this->CounterSuccess++;
+          $this->unsetBoundaries();
           return $this->messageId; # On success returns message ID.
         }
+        $this->unsetBoundaries();
         return false;
       #########################################
     }
@@ -1047,15 +1051,11 @@ class universalPHPmailer {
 
   /**
    * Unsets (clears) existing boundary strings.
-   * This may be needed only when sending bulk mails in a loop and
-   * only when this class is instantiated before the bulk loop.
    *
    */
-  public function unsetBoundaries() {
+  private function unsetBoundaries() {
     unset($this->rbstr);
-    foreach ($this->boundary as $key => $val) {
-      unset($this->boundary[$key]);
-    }
+    $this->boundary = array();
   }
 
   #===================================================================

@@ -247,9 +247,7 @@ foreach ($recipientArr as $recipient) {
   $mailor->toEmail   = $recipient['email'];
 
   # It is recommended to unset certain properties!
-  $mailor->unsetBoundaries();
-
-  # Unset these only if they are added inside the loop
+  # Unset these only if the attachements are added inside the loop
   //$mailor->unsetInlineImages();
   //$mailor->unsetAttachments();
 
