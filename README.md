@@ -236,7 +236,7 @@ $recipientArr = array(
   ),
 );
 
-# These 2 images are same for all recipients
+# These 2 images are same for all recipients (as are the content ID strings)
 $cidA = $mailor->addInlineImage('/some/path/imageA.jpg'); # This gives us the content ID string
 $cidB = $mailor->addInlineImage('/some/path/imageB.png');
 
@@ -246,10 +246,12 @@ foreach ($recipientArr as $recipient) {
   $mailor->toName    = $recipient['name'];
   $mailor->toEmail   = $recipient['email'];
 
-  # It is recommended to unset certain properties!
-  # Unset these only if the attachements are added inside the loop
+  # If you want image CID's to be unique message to message, you should
+  # unset these properties and add the attachments inside the loop!
   //$mailor->unsetInlineImages();
   //$mailor->unsetAttachments();
+  //$cidA = $mailor->addInlineImage('/some/path/imageA.jpg');
+  //$cidB = $mailor->addInlineImage('/some/path/imageB.png');
 
   $mailor->textHtml  = '<body>
     <p>Hi '.$recipient['name'].',</p>
