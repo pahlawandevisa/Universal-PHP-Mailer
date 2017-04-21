@@ -1,9 +1,8 @@
 {
     "name": "peterkahl/universal-php-mailer",
-    "type": "library",
     "description": "Self-configuring PHP mailer, capable of sending any type of content including plain text, html, inline images, and any kind and any number of attachments.",
     "keywords": ["mailer", "mail", "smtp", "bulk", "attachments", "inline-images", "email-marketing"],
-    "homepage": "https://github.com/peterkahl/Universal-PHP-Mailer",
+    "type": "library",
     "license": "Apache License Version 2.0",
     "authors": [
         {
@@ -13,6 +12,7 @@
             "role": "Developer"
         }
     ],
+    "minimum-stability": "stable",
     "require": {
         "php": ">=5.3.0"
     },
