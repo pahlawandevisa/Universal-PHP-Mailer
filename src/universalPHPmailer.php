@@ -31,7 +31,7 @@
  * <https://github.com/PHPMailer/PHPMailer/blob/master/class.smtp.php>
  */
 
-namespace universalPHPmailer;
+namespace peterkahl\universalPHPmailer;
 
 class universalPHPmailer {
 

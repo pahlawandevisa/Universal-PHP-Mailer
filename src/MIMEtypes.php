@@ -21,7 +21,7 @@
  *
  */
 
-namespace universalPHPmailer;
+namespace peterkahl\universalPHPmailer;
 
 class MIMEtypes {
 

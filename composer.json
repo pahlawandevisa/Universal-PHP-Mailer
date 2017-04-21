@@ -21,7 +21,7 @@
     },
     "autoload": {
         "psr-4": {
-            "peterkahl\\universalPHPmailer\\": "src/universalPHPmailer"
+            "peterkahl\\universalPHPmailer\\": "src/"
         }
     }
 }

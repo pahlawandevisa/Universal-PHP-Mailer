@@ -44,7 +44,7 @@ This package does not validate email addresses. Therefore, you should validate a
 
 How to send `text/plain`:
 ```php
-use universalPHPmailer\universalPHPmailer;
+use peterkahl\universalPHPmailer;
 
 $mailor = new universalPHPmailer;
 
@@ -72,7 +72,7 @@ if (!empty($msgID)) {
 
 How to send `text/html`:
 ```php
-use universalPHPmailer\universalPHPmailer;
+use peterkahl\universalPHPmailer;
 
 $mailor = new universalPHPmailer;
 
@@ -99,7 +99,7 @@ if (!empty($msgID)) {
 
 How to send `text/html` + `inline images`:
 ```php
-use universalPHPmailer\universalPHPmailer;
+use peterkahl\universalPHPmailer;
 
 $mailor = new universalPHPmailer;
 
@@ -131,7 +131,7 @@ if (!empty($msgID)) {
 
 How to send `text/plain` + `text/html` + `inline images`:
 ```php
-use universalPHPmailer\universalPHPmailer;
+use peterkahl\universalPHPmailer;
 
 $mailor = new universalPHPmailer;
 
@@ -170,7 +170,7 @@ if (!empty($msgID)) {
 
 How to send `text/plain` + `text/html` + `inline images` + `attachment`:
 ```php
-use universalPHPmailer\universalPHPmailer;
+use peterkahl\universalPHPmailer;
 
 $mailor = new universalPHPmailer;
 
@@ -211,7 +211,7 @@ if (!empty($msgID)) {
 
 How to send `text/html` + `inline images` in a loop (multiple recipients, high volume) while reusing the socket connection:
 ```php
-use universalPHPmailer\universalPHPmailer;
+use peterkahl\universalPHPmailer;
 
 # Instatiate outside of (before) the loop
 $mailor = new universalPHPmailer;
@@ -274,7 +274,7 @@ If you want to be sure that display name in headers is per RFC5322, use the meth
 
 (Here I am using an example of `text/plain` mail):
 ```php
-use universalPHPmailer\universalPHPmailer;
+use peterkahl\universalPHPmailer;
 
 $mailor = new universalPHPmailer;
 
