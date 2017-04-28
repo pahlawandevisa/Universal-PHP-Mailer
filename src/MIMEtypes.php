@@ -2,7 +2,7 @@
 /**
  * MIME Types
  *
- * @version    0.3 (2017-02-21 02:36:00 GMT)
+ * @version    0.4 (2017-04-28 01:55:00 GMT)
  * @author     Peter Kahl <peter.kahl@colossalmind.com>
  * @copyright  2016-2017 Peter Kahl
  * @license    Apache License, Version 2.0
@@ -22,6 +22,8 @@
  */
 
 namespace peterkahl\universalPHPmailer;
+
+use \Exception;
 
 class MIMEtypes {
 

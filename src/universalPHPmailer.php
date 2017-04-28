@@ -2,7 +2,7 @@
 /**
  * Universal PHP Mailer
  *
- * @version    1.8 (2017-04-26 23:27:00 GMT)
+ * @version    1.8.1 (2017-04-28 01:55:00 GMT)
  * @author     Peter Kahl <peter.kahl@colossalmind.com>
  * @copyright  2016-2017 Peter Kahl
  * @license    Apache License, Version 2.0
@@ -33,13 +33,15 @@
 
 namespace peterkahl\universalPHPmailer;
 
+use \Exception;
+
 class universalPHPmailer {
 
   /**
    * Version
    * @var string
    */
-  const VERSION = '1.8';
+  const VERSION = '1.8.1';
 
   /**
    * Method used to send mail
