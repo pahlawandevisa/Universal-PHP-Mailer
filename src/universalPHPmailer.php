@@ -2,7 +2,7 @@
 /**
  * Universal PHP Mailer
  *
- * @version    1.8.1 (2017-04-28 01:55:00 GMT)
+ * @version    1.9 (2017-05-17 09:19:00 GMT)
  * @author     Peter Kahl <peter.kahl@colossalmind.com>
  * @copyright  2016-2017 Peter Kahl
  * @license    Apache License, Version 2.0
@@ -41,7 +41,7 @@ class universalPHPmailer {
    * Version
    * @var string
    */
-  const VERSION = '1.8.1';
+  const VERSION = '1.9';
 
   /**
    * Method used to send mail
@@ -1194,11 +1194,7 @@ class universalPHPmailer {
         else {
           # Subsequent character (2,3,...)
           $mbPrev = $mb;
-          # If preceeding character is multibyte, whitespace should
-          # also be grouped and encoded with preceeding character.
-          if ($ch != ' ') {
-            $mb = $this->isMultibyteString($ch);
-          }
+          $mb = $this->isMultibyteString($ch);
           if ($mbPrev == $mb) {
             $new[$kn] .= $ch; # Same type as previous
           }
@@ -1290,9 +1286,13 @@ class universalPHPmailer {
     foreach ($arr as $av) {
       if (strlen($av) > self::WRAP_LEN - 1 && strpos($av, '?=') !== false) {
         $tmp = explode('?=', $av);
-        foreach ($tmp as $tv) {
-          if (!empty($tv)) {
+        $cnt = count($tmp);
+        foreach ($tmp as $tk => $tv) {
+          if ($tk < ($cnt -1)) {
             $new[] = $tv.'?=';
+          }
+          else {
+            $new[] = $tv;
           }
         }
       }
