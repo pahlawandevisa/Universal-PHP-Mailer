@@ -2,7 +2,7 @@
 /**
  * Universal PHP Mailer
  *
- * @version    1.9 (2017-05-17 09:19:00 GMT)
+ * @version    1.10 (2017-05-17 09:51:00 GMT)
  * @author     Peter Kahl <peter.kahl@colossalmind.com>
  * @copyright  2016-2017 Peter Kahl
  * @license    Apache License, Version 2.0
@@ -41,7 +41,7 @@ class universalPHPmailer {
    * Version
    * @var string
    */
-  const VERSION = '1.9';
+  const VERSION = '1.10';
 
   /**
    * Method used to send mail
@@ -1288,11 +1288,13 @@ class universalPHPmailer {
         $tmp = explode('?=', $av);
         $cnt = count($tmp);
         foreach ($tmp as $tk => $tv) {
-          if ($tk < ($cnt -1)) {
-            $new[] = $tv.'?=';
-          }
-          else {
-            $new[] = $tv;
+          if (!empty($tv)) {
+            if ($tk < ($cnt -1)) {
+              $new[] = $tv.'?=';
+            }
+            else {
+              $new[] = $tv;
+            }
           }
         }
       }
