@@ -52,10 +52,9 @@ $mailor->RecipientTo = array(
                             'john.smith@udwiwobg' => 'John Smith'
                             );
 
-$mailor->subject   = 'Lorem Ipsum';
-$mailor->fromName  = 'James Jones';
-$mailor->fromEmail = 'james.jones@udwiwobg';
-$mailor->hostName  = 'zarscwfo';
+$mailor->Subject    = 'Lorem Ipsum';
+$mailor->SenderFrom = array('james.jones@udwiwobg' => 'James Jones');
+$mailor->hostName   = 'zarscwfo';
 
 $mailor->textPlain = 'Hi John,
 
@@ -84,10 +83,9 @@ $mailor->RecipientTo = array(
                             'jane@udwiwobg'       => '',
                             );
 
-$mailor->subject   = 'Lorem Ipsum';
-$mailor->fromName  = 'James Jones';
-$mailor->fromEmail = 'james.jones@udwiwobg';
-$mailor->hostName  = 'zarscwfo';
+$mailor->Subject    = 'Lorem Ipsum';
+$mailor->SenderFrom = array('james.jones@udwiwobg' => 'James Jones');
+$mailor->hostName   = 'zarscwfo';
 
 $mailor->textPlain = 'Hello troops,
 
@@ -114,10 +112,9 @@ $mailor->RecipientTo = array(
                             'john.smith@udwiwobg' => 'John Smith'
                             );
 
-$mailor->subject   = 'Lorem Ipsum';
-$mailor->fromName  = 'James Jones';
-$mailor->fromEmail = 'james.jones@udwiwobg';
-$mailor->hostName  = 'zarscwfo';
+$mailor->Subject    = 'Lorem Ipsum';
+$mailor->SenderFrom = array('james.jones@udwiwobg' => 'James Jones');
+$mailor->hostName   = 'zarscwfo';
 
 $mailor->textHtml  = '<body>
   <p>Hi John,</p>
@@ -143,10 +140,9 @@ $mailor->RecipientTo = array(
                             'john.smith@udwiwobg' => 'John Smith'
                             );
 
-$mailor->subject   = 'Lorem Ipsum';
-$mailor->fromName  = 'James Jones';
-$mailor->fromEmail = 'james.jones@udwiwobg';
-$mailor->hostName  = 'zarscwfo';
+$mailor->Subject    = 'Lorem Ipsum';
+$mailor->SenderFrom = array('james.jones@udwiwobg' => 'James Jones');
+$mailor->hostName   = 'zarscwfo';
 
 $cidA = $mailor->addInlineImage('/some/path/imageA.jpg'); # This gives us the content ID string
 $cidB = $mailor->addInlineImage('/some/path/imageB.png');
@@ -177,10 +173,9 @@ $mailor->RecipientTo = array(
                             'john.smith@udwiwobg' => 'John Smith'
                             );
 
-$mailor->subject   = 'Lorem Ipsum';
-$mailor->fromName  = 'James Jones';
-$mailor->fromEmail = 'james.jones@udwiwobg';
-$mailor->hostName  = 'zarscwfo';
+$mailor->Subject    = 'Lorem Ipsum';
+$mailor->SenderFrom = array('james.jones@udwiwobg' => 'James Jones');
+$mailor->hostName   = 'zarscwfo';
 
 $cidA = $mailor->addInlineImage('/some/path/imageA.jpg'); # This gives us the content ID string
 $cidB = $mailor->addInlineImage('/some/path/imageB.png');
@@ -218,10 +213,9 @@ $mailor->RecipientTo = array(
                             'john.smith@udwiwobg' => 'John Smith'
                             );
 
-$mailor->subject   = 'Lorem Ipsum';
-$mailor->fromName  = 'James Jones';
-$mailor->fromEmail = 'james.jones@udwiwobg';
-$mailor->hostName  = 'zarscwfo';
+$mailor->Subject    = 'Lorem Ipsum';
+$mailor->SenderFrom = array('james.jones@udwiwobg' => 'James Jones');
+$mailor->hostName   = 'zarscwfo';
 
 $cidA = $mailor->addInlineImage('/some/path/imageA.jpg'); # This gives us the content ID string
 $cidB = $mailor->addInlineImage('/some/path/imageB.png');
@@ -258,10 +252,9 @@ use peterkahl\universalPHPmailer\universalPHPmailer;
 # Instatiate outside of (before) the loop
 $mailor = new universalPHPmailer;
 
-$mailor->subject   = 'Weekly best deal newsletter';
-$mailor->fromName  = '"Mail Robot (don\'t reply)"'; # Display name per RFC5322
-$mailor->fromEmail = 'james.jones@udwiwobg';
-$mailor->hostName  = 'zarscwfo';
+$mailor->Subject    = 'Weekly best deal newsletter';
+$mailor->SenderFrom = array('james.jones@udwiwobg' => '"Mail Robot (don\'t reply)"'); # Display name per RFC5322
+$mailor->hostName   = 'zarscwfo';
 
 $recipientArr = array(
   0 => array(
@@ -325,10 +318,9 @@ $mailor->RecipientTo = array(
                             'mao@backintime.sample' => $mailor->formatDisplayName('Mao "Chairman" 毛泽东')
                             );
 
-$mailor->subject   = '請問';
-$mailor->fromName  = $mailor->formatDisplayName('James J. Jones');
-$mailor->fromEmail = 'james.jones@udwiwobg';
-$mailor->hostName  = 'host.name.sample';
+$mailor->Subject    = '請問';
+$mailor->SenderFrom = array('james.jones@udwiwobg' => $mailor->formatDisplayName('James J. Jones'));
+$mailor->hostName   = 'host.name.sample';
 
 $mailor->textPlain = 'Hi 泽东,
 

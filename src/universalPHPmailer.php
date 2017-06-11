@@ -2,7 +2,7 @@
 /**
  * Universal PHP Mailer
  *
- * @version    2.0 (2017-06-11 01:09:00 GMT)
+ * @version    3.0 (2017-06-11 22:36:00 GMT)
  * @author     Peter Kahl <peter.kahl@colossalmind.com>
  * @copyright  2016-2017 Peter Kahl
  * @license    Apache License, Version 2.0
@@ -41,7 +41,7 @@ class universalPHPmailer {
    * Version
    * @var string
    */
-  const VERSION = '2.0';
+  const VERSION = '3.0';
 
   /**
    * Method used to send mail
@@ -149,22 +149,61 @@ class universalPHPmailer {
   private $SanitisedTo;
 
   /**
-   * Sender's display name
-   * @var string
+   * Recipent Cc:
+   * Specify one or more Cc: recipients.
+   * @var array
+   * Valid format --
+   * array(email => name)
    */
-  public $fromName;
+  public $RecipientCc;
 
   /**
-   * Sender's email address
-   * Must comply with RFC5322 (only printable ASCII and '@').
-   * IDN and Unicode addresses must be converted to ASCII.
-   * It it advised that you validate all email adresses prior to using
-   * this package.
+   * Sanitised version of Recipient Cc: array
+   * @var array
+   */
+  private $SanitisedCc;
+
+  /**
+   * Recipent Bcc:
+   * Specify one or more Bcc: recipients.
+   * @var array
+   * Valid format --
+   * array(email => name)
+   */
+  public $RecipientBcc;
+
+  /**
+   * Sanitised version of Recipient Bcc: array
+   * @var array
+   */
+  private $SanitisedBcc;
+
+  /**
+   * Sender
+   * Specify one sender.
+   * @var array
+   * Valid format --
+   * array(email => name)
+   */
+  public $SenderFrom;
+
+  /**
+   * Sanitised version of SenderFrom array
+   * @var array
+   */
+  private $SanitisedFrom;
+
+  /**
+   * Subject
    * @var string
    */
-  public $fromEmail;
+  public $Subject;
 
-  public $subject;
+  /**
+   * Sanitised version of Subject
+   * @var string
+   */
+  private $SanitisedSubject;
 
   public $textPlain;
 
@@ -212,6 +251,8 @@ class universalPHPmailer {
    * @var string
    */
   public $hostName;
+
+  private $fromEmail;
 
   /**
    * Message ID
@@ -338,23 +379,73 @@ class universalPHPmailer {
   #===================================================================
 
   public function sendMessage() {
-    # Validate
+
     if ($this->mailMethod != 'smtp' && $this->mailMethod != 'mail') {
       throw new Exception('Illegal value of property mailMethod');
     }
 
+    $recipientDefined = false;
+    $senderDefined    = false;
+
     $this->SanitisedTo = array();
-    foreach ($this->RecipientTo as $email => $name) {
-      $email = $this->sanitiseEmail($email);
-      $name  = $this->sanitiseHeader($name);
-      $this->SanitisedTo[$email] = $name;
+    if (!empty($this->RecipientTo)) {
+      foreach ($this->RecipientTo as $email => $name) {
+        if ($this->ValidEmail($email)) {
+          $name = $this->sanitiseHeader($name);
+          $this->SanitisedTo[$email] = $name;
+          $recipientDefined = true;
+        }
+      }
     }
 
-    $this->fromEmail = $this->sanitiseEmail($this->fromEmail);
+    $this->SanitisedCc = array();
+    if (!empty($this->RecipientCc)) {
+      foreach ($this->RecipientCc as $email => $name) {
+        if ($this->ValidEmail($email)) {
+          $name = $this->sanitiseHeader($name);
+          $this->SanitisedCc[$email] = $name;
+          $recipientDefined = true;
+        }
+      }
+    }
 
-    $this->fromName  = $this->sanitiseHeader($this->fromName);
+    $this->SanitisedBcc = array();
+    if (!empty($this->RecipientBcc)) {
+      foreach ($this->RecipientBcc as $email => $name) {
+        if ($this->ValidEmail($email)) {
+          $name = $this->sanitiseHeader($name);
+          $this->SanitisedBcc[$email] = $name;
+          $recipientDefined = true;
+        }
+      }
+    }
 
-    $this->subject   = $this->sanitiseHeader($this->subject);
+    if (!$recipientDefined) {
+      throw new Exception('No valid recipient is defined');
+    }
+
+    if (!empty($this->SanitisedCc) && empty($this->SanitisedTo)) {
+      throw new Exception('You cannot set Cc: header because you have no To: recipients');
+    }
+
+    $this->SanitisedFrom = array();
+    if (!empty($this->SenderFrom)) {
+      foreach ($this->SenderFrom as $email => $name) {
+        if ($this->ValidEmail($email)) {
+          $name = $this->sanitiseHeader($name);
+          $this->SanitisedFrom[$email] = $name;
+          $this->fromEmail = $email;
+          $senderDefined = true;
+          break;
+        }
+      }
+    }
+
+    if (!$senderDefined) {
+      throw new Exception('No valid sender is defined');
+    }
+
+    $this->SanitisedSubject = $this->sanitiseHeader($this->Subject);
 
     # Boundaries must be unique for each message
     $this->unsetBoundaries();
@@ -371,8 +462,13 @@ class universalPHPmailer {
     switch ($this->mailMethod) {
       #########################################
       case 'mail':
-        $to      = preg_replace('/^To:\s/', '', $this->encodeNameHeader('To', $this->SanitisedTo));
-        $subject = preg_replace('/^Subject:\s/', '', $this->encodeHeader('Subject', $this->subject));
+        if (!empty($this->SanitisedTo)) {
+          $to = preg_replace('/^To:\s/', '', $this->encodeNameHeader('To', $this->SanitisedTo));
+        }
+        else {
+          $to = 'undisclosed-recipients:;';
+        }
+        $subject = preg_replace('/^Subject:\s/', '', $this->encodeHeader('Subject', $this->SanitisedSubject));
         $headers = implode(self::CRLF, $this->mimeHeaders).self::CRLF;
         #----
         if (mail($to, $subject, $this->mimeBody, $headers, '-f'.$this->fromEmail) !== false) {
@@ -405,6 +501,19 @@ class universalPHPmailer {
 
   #===================================================================
 
+  /**
+   * Validates email address
+   *
+   */
+  private function ValidEmail($str) {
+    if (preg_match('/^(?!(?:(?:\x22?\x5C[\x00-\x7E]\x22?)|(?:\x22?[^\x5C\x22]\x22?)){255,})(?!(?:(?:\x22?\x5C[\x00-\x7E]\x22?)|(?:\x22?[^\x5C\x22]\x22?)){65,}@)(?:(?:[\x21\x23-\x27\x2A\x2B\x2D\x2F-\x39\x3D\x3F\x5E-\x7E]+)|(?:\x22(?:[\x01-\x08\x0B\x0C\x0E-\x1F\x21\x23-\x5B\x5D-\x7F]|(?:\x5C[\x00-\x7F]))*\x22))(?:\.(?:(?:[\x21\x23-\x27\x2A\x2B\x2D\x2F-\x39\x3D\x3F\x5E-\x7E]+)|(?:\x22(?:[\x01-\x08\x0B\x0C\x0E-\x1F\x21\x23-\x5B\x5D-\x7F]|(?:\x5C[\x00-\x7F]))*\x22)))*@(?:(?:(?!.*[^.]{64,})(?:(?:(?:xn--)?[a-z0-9]+(?:-[a-z0-9]+)*\.){1,126}){1,}(?:(?:[a-z][a-z0-9]*)|(?:(?:xn--)[a-z0-9]+))(?:-[a-z0-9]+)*)|(?:\[(?:(?:IPv6:(?:(?:[a-f0-9]{1,4}(?::[a-f0-9]{1,4}){7})|(?:(?!(?:.*[a-f0-9][:\]]){7,})(?:[a-f0-9]{1,4}(?::[a-f0-9]{1,4}){0,5})?::(?:[a-f0-9]{1,4}(?::[a-f0-9]{1,4}){0,5})?)))|(?:(?:IPv6:(?:(?:[a-f0-9]{1,4}(?::[a-f0-9]{1,4}){5}:)|(?:(?!(?:.*[a-f0-9]:){5,})(?:[a-f0-9]{1,4}(?::[a-f0-9]{1,4}){0,3})?::(?:[a-f0-9]{1,4}(?::[a-f0-9]{1,4}){0,3}:)?)))?(?:(?:25[0-5])|(?:2[0-4][0-9])|(?:1[0-9]{2})|(?:[1-9]?[0-9]))(?:\.(?:(?:25[0-5])|(?:2[0-4][0-9])|(?:1[0-9]{2})|(?:[1-9]?[0-9]))){3}))\]))$/iD', $str)) {
+      return true;
+    }
+    throw new Exception('Ivalid email address');
+  }
+
+  #===================================================================
+
   private function SMTPmail() {
 
     $this->debug('---------------------------------------------------------');
@@ -413,9 +522,27 @@ class universalPHPmailer {
       return false;
     }
 
-    foreach ($this->SanitisedTo as $email => $name) {
-      if (!$this->sendCommand('RCPT TO:<'.$email.'>', array(250, 251))) {
-        return false;
+    if (!empty($this->SanitisedTo)) {
+      foreach ($this->SanitisedTo as $email => $name) {
+        if (!$this->sendCommand('RCPT TO:<'.$email.'>', array(250, 251))) {
+          return false;
+        }
+      }
+    }
+
+    if (!empty($this->SanitisedCc)) {
+      foreach ($this->SanitisedCc as $email => $name) {
+        if (!$this->sendCommand('RCPT TO:<'.$email.'>', array(250, 251))) {
+          return false;
+        }
+      }
+    }
+
+    if (!empty($this->SanitisedBcc)) {
+      foreach ($this->SanitisedBcc as $email => $name) {
+        if (!$this->sendCommand('RCPT TO:<'.$email.'>', array(250, 251))) {
+          return false;
+        }
       }
     }
 
@@ -742,12 +869,6 @@ class universalPHPmailer {
 
   #===================================================================
 
-  private function sanitiseEmail($email) {
-    return filter_var($email, FILTER_SANITIZE_EMAIL);
-  }
-
-  #===================================================================
-
   private function sanitiseHeader($str) {
     return preg_replace("/(?:\n|\r|\t|%0A|%0D|%08|%09)+/i", '', $str);
   }
@@ -763,13 +884,26 @@ class universalPHPmailer {
     $this->setEncoding();
 
     if ($this->mailMethod != 'mail') {
-      $this->mimeHeaders[] = $this->encodeNameHeader('To', $this->SanitisedTo);
-      $this->mimeHeaders[] = $this->encodeHeader('Subject', $this->subject);
+      if (!empty($this->SanitisedTo)) {
+        $this->mimeHeaders[] = $this->encodeNameHeader('To', $this->SanitisedTo);
+      }
+      else {
+        $this->mimeHeaders[] = 'To: undisclosed-recipients:;';
+      }
+      $this->mimeHeaders[] = $this->encodeHeader('Subject', $this->SanitisedSubject);
+    }
+
+    if (!empty($this->SanitisedCc)) {
+      $this->mimeHeaders[] = $this->encodeNameHeader('Cc', $this->SanitisedCc);
+    }
+
+    if (!empty($this->SanitisedBcc)) {
+      $this->mimeHeaders[] = $this->encodeNameHeader('Bcc', $this->SanitisedBcc);
     }
 
     $this->mimeHeaders[] = $this->getHeaderDate();
     $this->mimeHeaders[] = $this->getHeaderMessageId();
-    $this->mimeHeaders[] = $this->getHeaderFrom();
+    $this->mimeHeaders[] = $this->encodeNameHeader('From', $this->SanitisedFrom);
 
     if (!empty($this->customHeaders) && is_array($this->customHeaders)) {
       foreach ($this->customHeaders as $key => $val) {
@@ -1128,12 +1262,6 @@ class universalPHPmailer {
    */
   private function getHeaderDate() {
     return 'Date: '.date('D, j M Y H:i:s O (T)');
-  }
-
-  #===================================================================
-
-  private function getHeaderFrom() {
-    return $this->encodeNameHeader('From', array($this->fromEmail => $this->fromName));
   }
 
   #===================================================================
