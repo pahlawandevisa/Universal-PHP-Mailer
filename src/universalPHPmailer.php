@@ -414,11 +414,9 @@ class universalPHPmailer {
     }
 
     foreach ($this->SanitisedTo as $email => $name) {
-      $rcptTo = $email;
-      break;
-    }
-    if (!$this->sendCommand('RCPT TO:<'.$rcptTo.'>', array(250, 251))) {
-      return false;
+      if (!$this->sendCommand('RCPT TO:<'.$email.'>', array(250, 251))) {
+        return false;
+      }
     }
 
     if (!$this->sendCommand('DATA', 354)) {
@@ -1180,6 +1178,7 @@ class universalPHPmailer {
       }
     }
     return implode(','. self::CRLF .' ', $new);
+  }
 
   #===================================================================
 
