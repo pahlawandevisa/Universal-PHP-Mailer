@@ -1177,7 +1177,7 @@ class universalPHPmailer {
         $new[] = $email;
       }
     }
-    return implode(','. self::CRLF .' ', $new);
+    return $hdr.': '.implode(','. self::CRLF .' ', $new);
   }
 
   #===================================================================
