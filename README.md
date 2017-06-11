@@ -42,20 +42,54 @@ This package does not validate email addresses. Therefore, you should validate a
 
 ## Usage
 
-How to send `text/plain`:
+How to send `text/plain` (single recipient):
 ```php
 use peterkahl\universalPHPmailer\universalPHPmailer;
 
 $mailor = new universalPHPmailer;
 
-$mailor->toName    = 'John Smith';
-$mailor->toEmail   = 'john.smith@udwiwobg';
+$mailor->RecipientTo = array(
+                            'john.smith@udwiwobg' => 'John Smith'
+                            );
+
 $mailor->subject   = 'Lorem Ipsum';
 $mailor->fromName  = 'James Jones';
 $mailor->fromEmail = 'james.jones@udwiwobg';
 $mailor->hostName  = 'zarscwfo';
 
 $mailor->textPlain = 'Hi John,
+
+I am testing this mailer from GitHub. Please let me know if you\'ve received this message.
+
+Best regards,
+J.J.';
+
+$msgID = $mailor->sendMessage();
+
+if (!empty($msgID)) {
+  echo 'Successfully sent message ID ..... '. $msgID;
+}
+
+```
+
+How to send `text/plain` (multiple recipients):
+```php
+use peterkahl\universalPHPmailer\universalPHPmailer;
+
+$mailor = new universalPHPmailer;
+
+$mailor->RecipientTo = array(
+                            'john.smith@udwiwobg' => 'John Smith',
+                            'paul.smith@udwiwobg' => 'Paul',
+                            'jane@udwiwobg'       => '',
+                            );
+
+$mailor->subject   = 'Lorem Ipsum';
+$mailor->fromName  = 'James Jones';
+$mailor->fromEmail = 'james.jones@udwiwobg';
+$mailor->hostName  = 'zarscwfo';
+
+$mailor->textPlain = 'Hello troops,
 
 I am testing this mailer from GitHub. Please let me know if you\'ve received this message.
 

@@ -2,7 +2,7 @@
 /**
  * Universal PHP Mailer
  *
- * @version    1.11 (2017-05-21 10:35:00 GMT)
+ * @version    2.0 (2017-06-11 01:09:00 GMT)
  * @author     Peter Kahl <peter.kahl@colossalmind.com>
  * @copyright  2016-2017 Peter Kahl
  * @license    Apache License, Version 2.0
@@ -41,7 +41,7 @@ class universalPHPmailer {
    * Version
    * @var string
    */
-  const VERSION = '1.11';
+  const VERSION = '2.0';
 
   /**
    * Method used to send mail
@@ -134,20 +134,19 @@ class universalPHPmailer {
   public $serverTZoffset = 0;
 
   /**
-   * Recipeint's display name
-   * @var string
+   * Recipent To:
+   * Specify one or more To: recipients.
+   * @var array
+   * Valid format --
+   * array(email => name)
    */
-  public $toName;
+  public $RecipientTo;
 
   /**
-   * Recipeint's email address
-   * Must comply with RFC5322 (only printable ASCII and '@').
-   * IDN and Unicode addresses must be converted to ASCII.
-   * It it advised that you validate all email adresses prior to using
-   * this package.
-   * @var string
+   * Sanitised version of Recipient To: array
+   * @var array
    */
-  public $toEmail;
+  private $SanitisedTo;
 
   /**
    * Sender's display name
@@ -344,12 +343,18 @@ class universalPHPmailer {
       throw new Exception('Illegal value of property mailMethod');
     }
 
-    $this->toEmail   = $this->sanitizeEmail($this->toEmail);
-    $this->fromEmail = $this->sanitizeEmail($this->fromEmail);
+    $this->SanitisedTo = array();
+    foreach ($this->RecipientTo as $email => $name) {
+      $email = $this->sanitiseEmail($email);
+      $name  = $this->sanitiseHeader($name);
+      $this->SanitisedTo[$email] = $name;
+    }
 
-    $this->toName    = $this->sanitizeHeader($this->toName);
-    $this->fromName  = $this->sanitizeHeader($this->fromName);
-    $this->subject   = $this->sanitizeHeader($this->subject);
+    $this->fromEmail = $this->sanitiseEmail($this->fromEmail);
+
+    $this->fromName  = $this->sanitiseHeader($this->fromName);
+
+    $this->subject   = $this->sanitiseHeader($this->subject);
 
     # Boundaries must be unique for each message
     $this->unsetBoundaries();
@@ -366,7 +371,7 @@ class universalPHPmailer {
     switch ($this->mailMethod) {
       #########################################
       case 'mail':
-        $to      = preg_replace('/^To:\s/', '', $this->encodeNameHeader('To', $this->toName, $this->toEmail));
+        $to      = preg_replace('/^To:\s/', '', $this->encodeNameHeader('To', $this->SanitisedTo));
         $subject = preg_replace('/^Subject:\s/', '', $this->encodeHeader('Subject', $this->subject));
         $headers = implode(self::CRLF, $this->mimeHeaders).self::CRLF;
         #----
@@ -408,7 +413,11 @@ class universalPHPmailer {
       return false;
     }
 
-    if (!$this->sendCommand('RCPT TO:<'.$this->toEmail.'>', array(250, 251))) {
+    foreach ($this->SanitisedTo as $email => $name) {
+      $rcptTo = $email;
+      break;
+    }
+    if (!$this->sendCommand('RCPT TO:<'.$rcptTo.'>', array(250, 251))) {
       return false;
     }
 
@@ -735,13 +744,13 @@ class universalPHPmailer {
 
   #===================================================================
 
-  private function sanitizeEmail($email) {
+  private function sanitiseEmail($email) {
     return filter_var($email, FILTER_SANITIZE_EMAIL);
   }
 
   #===================================================================
 
-  private function sanitizeHeader($str) {
+  private function sanitiseHeader($str) {
     return preg_replace("/(?:\n|\r|\t|%0A|%0D|%08|%09)+/i", '', $str);
   }
 
@@ -756,7 +765,7 @@ class universalPHPmailer {
     $this->setEncoding();
 
     if ($this->mailMethod != 'mail') {
-      $this->mimeHeaders[] = $this->encodeNameHeader('To', $this->toName, $this->toEmail);
+      $this->mimeHeaders[] = $this->encodeNameHeader('To', $this->SanitisedTo);
       $this->mimeHeaders[] = $this->encodeHeader('Subject', $this->subject);
     }
 
@@ -766,8 +775,8 @@ class universalPHPmailer {
 
     if (!empty($this->customHeaders) && is_array($this->customHeaders)) {
       foreach ($this->customHeaders as $key => $val) {
-        $key = $this->sanitizeHeader($key);
-        $val = $this->sanitizeHeader($val);
+        $key = $this->sanitiseHeader($key);
+        $val = $this->sanitiseHeader($val);
         $this->mimeHeaders[] = $this->encodeHeader($key, $val);
       }
     }
@@ -776,7 +785,7 @@ class universalPHPmailer {
       $this->mimeHeaders[] = $this->foldLine('X-Mailer: universalPHPmailer/'.self::VERSION.' (https://github.com/peterkahl/Universal-PHP-Mailer)');
     }
     elseif (is_string($this->Xmailer) && strlen($this->Xmailer) > 0) {
-      $this->mimeHeaders[] = $this->foldLine('X-Mailer: '.$this->sanitizeHeader($this->Xmailer));
+      $this->mimeHeaders[] = $this->foldLine('X-Mailer: '.$this->sanitiseHeader($this->Xmailer));
     }
 
     $this->mimeHeaders[] = 'MIME-Version: 1.0';
@@ -1126,7 +1135,7 @@ class universalPHPmailer {
   #===================================================================
 
   private function getHeaderFrom() {
-    return $this->encodeNameHeader('From', $this->fromName, $this->fromEmail);
+    return $this->encodeNameHeader('From', array($this->fromEmail => $this->fromName));
   }
 
   #===================================================================
@@ -1160,9 +1169,17 @@ class universalPHPmailer {
    * The easiest would be to use the method 'formatDisplayName' to assure
    * compliance with RFC5322.
    */
-  private function encodeNameHeader($hdr, $name, $email) {
-    return $this->foldLine($this->encodeHeader($hdr, $name, false).' <'.$email.'>');
-  }
+  private function encodeNameHeader($hdr, $arr) {
+    $new = array();
+    foreach ($arr as $email => $name) {
+      if (!empty($name)) {
+        $new[] = $this->encodeString($name) .' <'. $email .'>';
+      }
+      else {
+        $new[] = $email;
+      }
+    }
+    return implode(','. self::CRLF .' ', $new);
 
   #===================================================================
 
