@@ -110,8 +110,10 @@ use peterkahl\universalPHPmailer\universalPHPmailer;
 
 $mailor = new universalPHPmailer;
 
-$mailor->toName    = 'John Smith';
-$mailor->toEmail   = 'john.smith@udwiwobg';
+$mailor->RecipientTo = array(
+                            'john.smith@udwiwobg' => 'John Smith'
+                            );
+
 $mailor->subject   = 'Lorem Ipsum';
 $mailor->fromName  = 'James Jones';
 $mailor->fromEmail = 'james.jones@udwiwobg';
@@ -137,8 +139,10 @@ use peterkahl\universalPHPmailer\universalPHPmailer;
 
 $mailor = new universalPHPmailer;
 
-$mailor->toName    = 'John Smith';
-$mailor->toEmail   = 'john.smith@udwiwobg';
+$mailor->RecipientTo = array(
+                            'john.smith@udwiwobg' => 'John Smith'
+                            );
+
 $mailor->subject   = 'Lorem Ipsum';
 $mailor->fromName  = 'James Jones';
 $mailor->fromEmail = 'james.jones@udwiwobg';
@@ -169,8 +173,10 @@ use peterkahl\universalPHPmailer\universalPHPmailer;
 
 $mailor = new universalPHPmailer;
 
-$mailor->toName    = 'John Smith';
-$mailor->toEmail   = 'john.smith@udwiwobg';
+$mailor->RecipientTo = array(
+                            'john.smith@udwiwobg' => 'John Smith'
+                            );
+
 $mailor->subject   = 'Lorem Ipsum';
 $mailor->fromName  = 'James Jones';
 $mailor->fromEmail = 'james.jones@udwiwobg';
@@ -208,8 +214,10 @@ use peterkahl\universalPHPmailer\universalPHPmailer;
 
 $mailor = new universalPHPmailer;
 
-$mailor->toName    = 'John Smith';
-$mailor->toEmail   = 'john.smith@udwiwobg';
+$mailor->RecipientTo = array(
+                            'john.smith@udwiwobg' => 'John Smith'
+                            );
+
 $mailor->subject   = 'Lorem Ipsum';
 $mailor->fromName  = 'James Jones';
 $mailor->fromEmail = 'james.jones@udwiwobg';
@@ -277,8 +285,9 @@ $cidB = $mailor->addInlineImage('/some/path/imageB.png');
 # The loop
 foreach ($recipientArr as $recipient) {
 
-  $mailor->toName    = $recipient['name'];
-  $mailor->toEmail   = $recipient['email'];
+  $mailor->RecipientTo = array(
+                              $recipient['email'] => $recipient['name']
+                              );
 
   # If you want image CID's to be unique message to message, you should
   # unset these properties and add the attachments inside the loop!
@@ -312,8 +321,10 @@ use peterkahl\universalPHPmailer\universalPHPmailer;
 
 $mailor = new universalPHPmailer;
 
-$mailor->toName    = $mailor->formatDisplayName('Mao "Chairman" 毛泽东');
-$mailor->toEmail   = 'mao@backintime.sample';
+$mailor->RecipientTo = array(
+                            'mao@backintime.sample' => $mailor->formatDisplayName('Mao "Chairman" 毛泽东')
+                            );
+
 $mailor->subject   = '請問';
 $mailor->fromName  = $mailor->formatDisplayName('James J. Jones');
 $mailor->fromEmail = 'james.jones@udwiwobg';
