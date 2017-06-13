@@ -2,7 +2,7 @@
 /**
  * Universal PHP Mailer
  *
- * @version    3.0 (2017-06-11 22:36:00 GMT)
+ * @version    3.1 (2017-06-13 02:43:00 GMT)
  * @author     Peter Kahl <peter.kahl@colossalmind.com>
  * @copyright  2016-2017 Peter Kahl
  * @license    Apache License, Version 2.0
@@ -41,7 +41,7 @@ class universalPHPmailer {
    * Version
    * @var string
    */
-  const VERSION = '3.0';
+  const VERSION = '3.1';
 
   /**
    * Method used to send mail
@@ -1305,7 +1305,7 @@ class universalPHPmailer {
         $new[] = $email;
       }
     }
-    return $hdr.': '.implode(','. self::CRLF .' ', $new);
+    return $this->foldLine($hdr.': '.implode(', ', $new));
   }
 
   #===================================================================
