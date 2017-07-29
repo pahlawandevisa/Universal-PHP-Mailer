@@ -2,7 +2,7 @@
 /**
  * Universal PHP Mailer
  *
- * @version    3.3 (2017-07-27 22:53:00 GMT)
+ * @version    3.4 (2017-07-29 22:59:00 GMT)
  * @author     Peter Kahl <peter.kahl@colossalmind.com>
  * @copyright  2016-2017 Peter Kahl
  * @license    Apache License, Version 2.0
@@ -41,7 +41,7 @@ class universalPHPmailer {
    * Version
    * @var string
    */
-  const VERSION = '3.3';
+  const VERSION = '3.4';
 
   /**
    * Method used to send mail
@@ -1540,8 +1540,8 @@ class universalPHPmailer {
     if (strlen($str) > 1000) {
       $str = substr($str, 0, 1000).' ... [truncated]';
     }
-    list($sec, $usec) = explode('.', microtime(true));
-    file_put_contents($this->logFilename, '['. gmdate("Y-m-d H:i:s", $sec + $this->serverTZoffset) .'.'. substr($usec, 0, 3) .'] '. $str . PHP_EOL, FILE_APPEND | LOCK_EX);
+    list($sec, $usec) = explode('.', number_format(microtime(true), 3, '.', ''));
+    file_put_contents($this->logFilename, '['. gmdate("Y-m-d H:i:s", $sec + $this->serverTZoffset) .'.'. $usec .'] '. $str . PHP_EOL, FILE_APPEND | LOCK_EX);
   }
 
   #===================================================================
