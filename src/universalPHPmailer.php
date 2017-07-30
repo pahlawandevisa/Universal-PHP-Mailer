@@ -2,7 +2,7 @@
 /**
  * Universal PHP Mailer
  *
- * @version    3.4 (2017-07-29 22:59:00 GMT)
+ * @version    3.5 (2017-07-30 01:25:00 GMT)
  * @author     Peter Kahl <peter.kahl@colossalmind.com>
  * @copyright  2016-2017 Peter Kahl
  * @license    Apache License, Version 2.0
@@ -41,7 +41,7 @@ class universalPHPmailer {
    * Version
    * @var string
    */
-  const VERSION = '3.4';
+  const VERSION = '3.5';
 
   /**
    * Method used to send mail
@@ -1233,7 +1233,7 @@ class universalPHPmailer {
     $bytes = 6;
     $len   = 8;
     if (function_exists('sodium_randombytes_buf')) {
-      $str = \Sodium\bin2hex(\Sodium\randombytes_buf($bytes));
+      $str = sodium_bin2hex(sodium_randombytes_buf($bytes));
     }
     elseif (function_exists('\Sodium\randombytes_buf')) {
       $str = \Sodium\bin2hex(\Sodium\randombytes_buf($bytes));
