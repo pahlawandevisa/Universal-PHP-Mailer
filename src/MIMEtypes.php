@@ -2,8 +2,8 @@
 /**
  * MIME Types
  *
- * @version    0.4 (2017-04-28 01:55:00 GMT)
- * @author     Peter Kahl <peter.kahl@colossalmind.com>
+ * @version    3.6 (2017-12-20 07:30:24 GMT)
+ * @author     Peter Kahl <https://github.com/peterkahl>
  * @copyright  2016-2017 Peter Kahl
  * @license    Apache License, Version 2.0
  *

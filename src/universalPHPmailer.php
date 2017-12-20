@@ -2,8 +2,8 @@
 /**
  * Universal PHP Mailer
  *
- * @version    3.5.1 (2017-10-17 19:38:00 GMT)
- * @author     Peter Kahl <peter.kahl@colossalmind.com>
+ * @version    3.6 (2017-12-20 07:30:24 GMT)
+ * @author     Peter Kahl <https://github.com/peterkahl>
  * @copyright  2016-2017 Peter Kahl
  * @license    Apache License, Version 2.0
  *
@@ -41,7 +41,7 @@ class universalPHPmailer {
    * Version
    * @var string
    */
-  const VERSION = '3.5.1';
+  const VERSION = '3.6';
 
   /**
    * Method used to send mail
@@ -455,9 +455,11 @@ class universalPHPmailer {
     if ($this->mailMethod == 'smtp' && !$this->isConnectionOpen()) {
       if (!$this->SMTPconnectionOpen()) {
         $this->debug('Failed to establish SMTP connection.');
-        return false;
+        return array();
       }
     }
+
+    $this->mailString = implode(self::CRLF, $this->mimeHeaders) . self::CRLF . self::CRLF . $this->mimeBody;
 
     switch ($this->mailMethod) {
       #########################################
@@ -473,28 +475,33 @@ class universalPHPmailer {
         #----
         if (mail($to, $subject, $this->mimeBody, $headers, '-f'. $this->fromEmail) !== false) {
           $this->CounterSuccess++;
-          return $this->messageId; # On success returns message ID.
+          return array(
+            'messgid' => $this->messageId,
+            'mailstr' => $this->mailString,
+          );
         }
         $this->CounterReject++;
-        return false;
+        return array();
       #########################################
       case 'smtp':
-        $this->mailString = implode(self::CRLF, $this->mimeHeaders) . self::CRLF . self::CRLF . $this->mimeBody;
         # Check for excessive length
         if ($this->isCapable('SIZE')) {
           $len = strlen($this->mailString);
           if ($len > $this->SMTPextensions['SIZE']) {
             $this->debug('Message size '. $len .' exceeds server\'s limit of '. $this->SMTPextensions['SIZE'] .' bytes.');
             $this->CounterReject++;
-            return false;
+            return array();
           }
         }
         if ($this->SMTPmail()) {
           $this->CounterSuccess++;
-          return $this->messageId; # On success returns message ID.
+          return array(
+            'messgid' => $this->messageId,
+            'mailstr' => $this->mailString,
+          );
         }
         $this->CounterReject++;
-        return false;
+        return array();
       #########################################
     }
   }
@@ -789,7 +796,7 @@ class universalPHPmailer {
 
     $this->debug('---------------------------------------------------------');
 
-    $this->debug('MESSAGES-SENT: '. $this->CounterSuccess .'; MESSAGES-REJECTED: '. $this->CounterReject .'; CONNECTION-TIME: '. $this->benchmark($this->EpochConnectionOpened));
+    $this->debug('MESSAGES-SENT: '. $this->CounterSuccess .'; MESSAGES-REJECTED: '. $this->CounterReject .'; CONNECTION-TIME: '. $this->Benchmark($this->EpochConnectionOpened));
 
     fclose($this->SMTPsocket);
     $this->SMTPsocket = null;
@@ -1541,7 +1548,7 @@ class universalPHPmailer {
 
   #===================================================================
 
-  private function benchmark($st) {
+  private function Benchmark($st) {
     $val = (microtime(true) - $st);
     if ($val >= 1) {
       return number_format($val, 2, '.', ',') .' sec';
