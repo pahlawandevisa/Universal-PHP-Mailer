@@ -2,7 +2,7 @@
 /**
  * Universal PHP Mailer
  *
- * @version    3.6 (2017-12-20 07:30:24 GMT)
+ * @version    3.7 (2017-12-22 00:52:45 GMT)
  * @author     Peter Kahl <https://github.com/peterkahl>
  * @copyright  2016-2017 Peter Kahl
  * @license    Apache License, Version 2.0
@@ -41,7 +41,7 @@ class universalPHPmailer {
    * Version
    * @var string
    */
-  const VERSION = '3.6';
+  const VERSION = '3.7';
 
   /**
    * Method used to send mail
@@ -1132,7 +1132,7 @@ class universalPHPmailer {
 
     $this->inlineImage[$this->inlineImageKey]['original-filename'] = $hash .'.'. $extension;
     $this->inlineImage[$this->inlineImageKey]['file-extension']    = $extension;
-    $this->inlineImage[$this->inlineImageKey]['base64-data']       = base64_encode(file_get_contents($filename));
+    $this->inlineImage[$this->inlineImageKey]['base64-data']       = base64_encode($this->FileGetContents($filename));
     $this->inlineImage[$this->inlineImageKey]['content-id']        = $cid;
 
     $this->inlineImageKey++;
@@ -1180,7 +1180,7 @@ class universalPHPmailer {
 
     $this->attachment[$this->attachmentKey]['original-filename'] = rawurlencode($this->endExplode('/', $filename));
     $this->attachment[$this->attachmentKey]['file-extension']    = $this->fileExtension($filename);
-    $this->attachment[$this->attachmentKey]['base64-data']       = base64_encode(file_get_contents($filename));
+    $this->attachment[$this->attachmentKey]['base64-data']       = base64_encode($this->FileGetContents($filename));
     $this->attachment[$this->attachmentKey]['size']              = filesize($filename);
 
     $this->attachmentKey++;
@@ -1543,7 +1543,38 @@ class universalPHPmailer {
       $str = substr($str, 0, 1000) .' ... [truncated]';
     }
     list($sec, $usec) = explode('.', number_format(microtime(true), 3, '.', ''));
-    file_put_contents($this->logFilename, '['. gmdate("Y-m-d H:i:s", $sec + $this->serverTZoffset) .'.'. $usec .'] '. $str . PHP_EOL, FILE_APPEND | LOCK_EX);
+    $this->FileAppendContents($this->logFilename, '['. gmdate("Y-m-d H:i:s", $sec + $this->serverTZoffset) .'.'. $usec .'] '. $str . PHP_EOL);
+  }
+
+  #===================================================================
+
+  private function FileAppendContents($file, $str) {
+    if (!file_exists($file)) {
+      file_put_contents($file, $str, LOCK_EX);
+      return;
+    }
+    $handle = fopen($file, 'r+');
+    while (!flock($handle, FILE_APPEND | LOCK_EX)) {
+      usleep(1);
+    }
+    ftruncate($handle, 0);
+    fwrite($handle, $str);
+    fflush($handle);
+    flock($handle, LOCK_UN);
+    fclose($handle);
+  }
+
+  #===================================================================
+
+  private function FileGetContents($file) {
+    $handle = fopen($file, 'r');
+    while (!flock($handle, LOCK_SH)) {
+      usleep(1);
+    }
+    $contents = fread($handle, filesize($file));
+    flock($handle, LOCK_UN);
+    fclose($handle);
+    return $contents;
   }
 
   #===================================================================
