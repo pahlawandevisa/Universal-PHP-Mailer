@@ -2,7 +2,7 @@
 /**
  * Universal PHP Mailer
  *
- * @version    3.7 (2017-12-22 00:52:45 GMT)
+ * @version    3.8 (2017-12-23 03:22:03 GMT)
  * @author     Peter Kahl <https://github.com/peterkahl>
  * @copyright  2016-2017 Peter Kahl
  * @license    Apache License, Version 2.0
@@ -34,6 +34,7 @@
 namespace peterkahl\universalPHPmailer;
 
 use \Exception;
+use \SplFileObject;
 
 class universalPHPmailer {
 
@@ -41,7 +42,7 @@ class universalPHPmailer {
    * Version
    * @var string
    */
-  const VERSION = '3.7';
+  const VERSION = '3.8';
 
   /**
    * Method used to send mail
@@ -877,6 +878,9 @@ class universalPHPmailer {
   #===================================================================
 
   private function sanitiseHeader($str) {
+    if (empty($str)) {
+      return '';
+    }
     return preg_replace("/(?:\n|\r|\t|%0A|%0D|%08|%09)+/i", '', $str);
   }
 
@@ -1549,32 +1553,25 @@ class universalPHPmailer {
   #===================================================================
 
   private function FileAppendContents($file, $str) {
-    if (!file_exists($file)) {
-      file_put_contents($file, $str, LOCK_EX);
-      return;
-    }
-    $handle = fopen($file, 'r+');
-    while (!flock($handle, FILE_APPEND | LOCK_EX)) {
+    $fileObj = new SplFileObject($file, 'a');
+    while (!$fileObj->flock(LOCK_EX)) {
       usleep(1);
     }
-    ftruncate($handle, 0);
-    fwrite($handle, $str);
-    fflush($handle);
-    flock($handle, LOCK_UN);
-    fclose($handle);
+    $bytes = $fileObj->fwrite($str);
+    $fileObj->flock(LOCK_UN);
+    return $bytes;
   }
 
   #===================================================================
 
   private function FileGetContents($file) {
-    $handle = fopen($file, 'r');
-    while (!flock($handle, LOCK_SH)) {
+    $fileObj = new SplFileObject($file, 'r');
+    while (!$fileObj->flock(LOCK_EX)) {
       usleep(1);
     }
-    $contents = fread($handle, filesize($file));
-    flock($handle, LOCK_UN);
-    fclose($handle);
-    return $contents;
+    $str = $fileObj->fread($fileObj->getSize());
+    $fileObj->flock(LOCK_UN);
+    return $str;
   }
 
   #===================================================================
