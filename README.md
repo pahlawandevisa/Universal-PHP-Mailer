@@ -1,9 +1,8 @@
-<pre>
-╦ ╦┌┐┌┬┬  ┬┌─┐┬─┐┌─┐┌─┐┬    ╔═╗╦ ╦╔═╗  ╔╦╗┌─┐┬┬  ┌─┐┬─┐
-║ ║││││└┐┌┘├┤ ├┬┘└─┐├─┤│    ╠═╝╠═╣╠═╝  ║║║├─┤││  ├┤ ├┬┘
-╚═╝┘└┘┴ └┘ └─┘┴└─└─┘┴ ┴┴─┘  ╩  ╩ ╩╩    ╩ ╩┴ ┴┴┴─┘└─┘┴└─</pre>
+Universal PHP Mailer
 
-Super easy to use yet powerful PHP mailer, capable of sending any type of content including plain text, html, inline images, and any kind and any number of attachments, hence `Universal`.
+[![If this project has business value for you then don't hesitate to support me with a small donation.](https://img.shields.io/badge/Donations-via%20Paypal-blue.svg)](https://www.paypal.me/PeterK93)
+
+Easy to use yet powerful PHP mailer capable of sending any type of content including plain text, html, inline images, and any kind and any number of attachments, hence `Universal`.
 
 ## Self-configuring
 If you have ever tried composing multipart MIME mail, you will know how cumbersome it can be. With **Universal PHP Mailer** you will no longer struggle figuring out where you put "this and that" content and within which boundary and in which order. **Universal PHP Mailer** is self-configuring. Just give it whatever content you have and fire it off. It will compose the correct MIME-compliant mail string with whatever parts, multiparts and boundaries are necessary.
