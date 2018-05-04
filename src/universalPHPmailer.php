@@ -2,7 +2,7 @@
 /**
  * Universal PHP Mailer
  *
- * @version    3.8 (2017-12-23 03:22:03 GMT)
+ * @version    3.9 (2018-05-04 08:45:00 GMT)
  * @author     Peter Kahl <https://github.com/peterkahl>
  * @copyright  2016-2017 Peter Kahl
  * @license    Apache License, Version 2.0
@@ -42,7 +42,7 @@ class universalPHPmailer {
    * Version
    * @var string
    */
-  const VERSION = '3.8';
+  const VERSION = '3.9';
 
   /**
    * Method used to send mail
@@ -107,10 +107,16 @@ class universalPHPmailer {
   public $Xmailer = true;
 
   /**
-   * Absolute path and file name of debug log
+   * Absolute path to the writeable cache directory
    * @var string
    */
-  public $logFilename = '/srv/cache/SMTP.log';
+  public $CacheDir;
+
+  /**
+   * File name of debug log, starting with slash.
+   * @var string
+   */
+  const LOGFILENAME = '/SMTP.log';
 
   /**
    * Enable debug
@@ -253,6 +259,11 @@ class universalPHPmailer {
    */
   public $hostName;
 
+  /**
+   * Email from
+   * Automatically generated.
+   * @var string
+   */
   private $fromEmail;
 
   /**
@@ -298,8 +309,16 @@ class universalPHPmailer {
    */
   private $attachmentKey;
 
+  /**
+   * MIME headers
+   * @var array
+   */
   private $mimeHeaders;
 
+  /**
+   * MIME body
+   * @var string
+   */
   private $mimeBody;
 
   /**
@@ -309,11 +328,17 @@ class universalPHPmailer {
   private $mailString;
 
   /**
-   * Line wrapping & length limits per RFC5322
+   * Line wrapping limit per RFC5322
    * https://tools.ietf.org/html/rfc5322.html#section-2.1.1
    * @var integer
    */
   const WRAP_LEN = 76;
+
+  /**
+   * Line length limit per RFC5322
+   * https://tools.ietf.org/html/rfc5322.html#section-2.1.1
+   * @var integer
+   */
   const LINE_LEN_MAX = 998;
 
   /**
@@ -323,6 +348,10 @@ class universalPHPmailer {
    */
   const MB_LEN_MAX = 7;
 
+  /**
+   * Line break string
+   * @var string
+   */
   const CRLF = "\r\n";
 
   /**
@@ -1547,7 +1576,7 @@ class universalPHPmailer {
       $str = substr($str, 0, 1000) .' ... [truncated]';
     }
     list($sec, $usec) = explode('.', number_format(microtime(true), 3, '.', ''));
-    $this->FileAppendContents($this->logFilename, '['. gmdate("Y-m-d H:i:s", $sec + $this->serverTZoffset) .'.'. $usec .'] '. $str . PHP_EOL);
+    $this->FileAppendContents($this->CacheDir . self::LOGFILENAME, '['. gmdate("Y-m-d H:i:s", $sec + $this->serverTZoffset) .'.'. $usec .'] '. $str . PHP_EOL);
   }
 
   #===================================================================
