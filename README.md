@@ -14,24 +14,24 @@ When using the `SMTP` method, the mailer reuses the same socket connection for s
 
 ### Handles Any Kind of Content
 
-If we want to send a mail that consists of only 1 category of content, it is not a multipart mail. It is a *Non-multipart* mail.
+If we want to send a mail that consists of only 1 (category of) content, it is a *Non-multipart* mail. Non-multipart mail use cases--
 
-Non-multipart mail examples--
+| Case | text/plain | text/html | inline image | attachment |
+| :---:|:----------:| :--------:| :-----------:| :---------:|
+| 1    |      -     |     -     |      -       |     1      |
+| 2    |      1     |     -     |      -       |     -      |
+| 3    |      -     |     1     |      -       |     -      |
 
-- only one `attachment` (e.g. license key, PDF document, media file)
-- only one `text/plain` (e.g. the simplest form of text message)
-- only one `text/html` &nbsp; (e.g. HTML formatted text)
+Once we need to send a mail with 2 or more contents (regardless of category), we're talking about *Multipart* mail. Multipart mail use cases--
 
-Once we need to send a mail with 2 or more categories of content, we're talking about *Multipart* mail.
+| Case | text/plain | text/html | inline image | attachment |
+| :---:|:----------:| :--------:| :-----------:| :---------:|
+| 4    |      -     |     -     |      -       |     ≥ 2    |
+| 5    |      1     |     1     |      -       |     ≥ 0    |
+| 6    |      -     |     1     |      ≥ 1     |     ≥ 0    |
+| 7    |      -     |     1     |      ≥ 0     |     ≥ 1    |
+| 8    |      1     |     1     |      ≥ 0     |     ≥ 0    |
 
-Multipart mail examples--
-
-- two or more `attachment`
-- `text/plain` + `text/html` + zero or more `attachment`
-- `text/html`  + `inline images` + zero or more `attachment`
-- `text/plain` + `text/html` + `inline images` + zero or more `attachment`
-
-These are pretty much all the realistic combinations that we may encounter in real world applications.
 
 ## Considerations
 
