@@ -2,7 +2,7 @@
 /**
  * Universal PHP Mailer
  *
- * @version    3.10 (2018-05-22 06:41:00 GMT)
+ * @version    3.11 (2018-05-22 07:09:00 GMT)
  * @author     Peter Kahl <https://github.com/peterkahl>
  * @copyright  2016-2018 Peter Kahl
  * @license    Apache License, Version 2.0
@@ -42,7 +42,7 @@ class universalPHPmailer {
    * Version
    * @var string
    */
-  const VERSION = '3.10';
+  const VERSION = '3.11';
 
   /**
    * Method used to send mail
@@ -88,6 +88,13 @@ class universalPHPmailer {
    * @var string
    */
   public $SMTPpassword   = '';
+
+  /**
+   * Authentication Mechanism
+   * @var string
+   * Valid values are 'PLAIN', 'LOGIN', 'CRAM-MD5'
+   */
+  public $SMTPauthMech   = 'PLAIN';
 
   /**
    * Require SMTP connection to be secure.
@@ -730,15 +737,19 @@ class universalPHPmailer {
 
     $supported = array('PLAIN', 'LOGIN', 'CRAM-MD5');
 
-    foreach ($supported as $mechanism) {
-      if (in_array($mechanism, $this->SMTPextensions['AUTH'])) {
-        break;
-      }
-      $this->debug('ERROR: No matching authentication mechanism.');
+    $this->SMTPauthMech = strtoupper($this->SMTPauthMech);
+
+    if (!in_array($this->SMTPauthMech, $supported)) {
+      $this->debug('ERROR: Library does not support auth mechanism '. $this->SMTPauthMech);
       return false;
     }
 
-    switch ($mechanism) {
+    if (!in_array($this->SMTPauthMech, $this->SMTPextensions['AUTH'])) {
+      $this->debug('ERROR: SMTP server does not support auth mechanism '. $this->SMTPauthMech);
+      return false;
+    }
+
+    switch ($this->SMTPauthMech) {
       #--------------------------------------------
       case 'PLAIN':
         if (!$this->sendCommand('AUTH PLAIN', 334)) {
@@ -773,7 +784,7 @@ class universalPHPmailer {
         break;
       #--------------------------------------------
       default:
-        $this->debug('ERROR: Unsupported authentication mechanism '. $mechanism);
+        $this->debug('ERROR: Unsupported authentication mechanism '. $this->SMTPauthMech);
         return false;
     }
 

@@ -56,6 +56,7 @@ $mailor->SMTPserver      = 'smtp.gmail.com';
 $mailor->SMTPport        = 587;
 $mailor->SMTPusername    = 'example@gmail.com';
 $mailor->SMTPpassword    = '************************';
+$mailor->SMTPauthMech    = 'LOGIN';
 $mailor->forceSMTPsecure = true;
 $mailor->CAfile          = '/path/to/cacert.pem';
 $mailor->SMTPhelo        = 'www.myamazingwebsite.com';
