@@ -14,20 +14,24 @@ When using the `SMTP` method, the mailer reuses the same socket connection for s
 
 ### Handles Any Kind of Content
 
-Non-multipart mail--
+If we want to send a mail that consists of only 1 category of content, it is not a multipart mail. It is a *Non-multipart* mail.
 
-- only one `attachment`
-- only one `text/plain`
-- only one `text/html`
+Non-multipart mail examples--
 
-Multipart mail--
+- only one `attachment` (e.g. license key, PDF document, media file)
+- only one `text/plain` (e.g. the simplest form of text message)
+- only one `text/html` &nbsp; (e.g. HTML formatted text)
+
+Once we need to send a mail with 2 or more categories of content, we're talking about *Multipart* mail.
+
+Multipart mail examples--
 
 - two or more `attachment`
 - `text/plain` + `text/html` + zero or more `attachment`
 - `text/html`  + `inline images` + zero or more `attachment`
 - `text/plain` + `text/html` + `inline images` + zero or more `attachment`
 
-These are pretty much all the realistic combinations that may be encountered in real world applications.
+These are pretty much all the realistic combinations that we may encounter in real world applications.
 
 ## Considerations
 
@@ -46,7 +50,7 @@ This package uses simple email address validation. It is advised that you valida
 
 ## Usage Examples
 
-### The Basics
+#### The Basics
 ```php
 use peterkahl\universalPHPmailer\universalPHPmailer;
 
@@ -56,7 +60,6 @@ $mailor->SMTPserver      = 'smtp.gmail.com';
 $mailor->SMTPport        = 587;
 $mailor->SMTPusername    = 'example@gmail.com';
 $mailor->SMTPpassword    = '************************';
-$mailor->SMTPauthMech    = 'LOGIN';
 $mailor->forceSMTPsecure = true;
 $mailor->CAfile          = '/path/to/cacert.pem';
 $mailor->SMTPhelo        = 'www.myamazingwebsite.com';
@@ -94,7 +97,7 @@ $mailor->RecipientBcc = array(
 
 ```
 
-### Sending `text/plain` mail:
+#### Sending `text/plain` mail:
 
 ```php
 $mailor->textPlain = 'Hi John,
@@ -113,7 +116,7 @@ if (!empty($msgID)) {
 ```
 
 
-### Sending `text/html` mail:
+#### Sending `text/html` mail:
 ```php
 $mailor->textHtml  = '<body>
   <p>Hi John,</p>
@@ -129,7 +132,7 @@ if (!empty($msgID)) {
 
 ```
 
-### Sending `text/html` + `inline images` mail:
+#### Sending `text/html` + `inline images` mail:
 ```php
 // First add the images. This gives us content ID strings.
 $cidA = $mailor->addInlineImage('/some/path/imageA.jpg');
@@ -152,7 +155,7 @@ if (!empty($msgID)) {
 
 ```
 
-### Sending `text/plain` + `text/html` + `inline images` mail:
+#### Sending `text/plain` + `text/html` + `inline images` mail:
 ```php
 // First add the images. This gives us content ID strings.
 $cidA = $mailor->addInlineImage('/some/path/imageA.jpg');
@@ -182,7 +185,7 @@ if (!empty($msgID)) {
 
 ```
 
-### Sending `text/plain` + `text/html` + `inline images` + `attachment` mail:
+#### Sending `text/plain` + `text/html` + `inline images` + `attachment` mail:
 
 ```php
 // First add the images. This gives us content ID strings.
@@ -216,7 +219,7 @@ if (!empty($msgID)) {
 
 ```
 
-### Sending `text/html` + `inline images` mail in a loop (high volume) while reusing the socket connection:
+#### Sending `text/html` + `inline images` mail in a loop (high volume) while reusing the socket connection:
 
 ```php
 // This array has our recipients.
@@ -270,7 +273,7 @@ foreach ($recipientArr as $recipient) {
 
 ```
 
-### Display Name Formatting
+#### Formatting of Display Name
 
 If you want to be sure that display name in headers is per RFC5322, use the method `formatDisplayName`. This will avoid some undesired behaviour.
 
@@ -279,14 +282,22 @@ use peterkahl\universalPHPmailer\universalPHPmailer;
 
 $mailor = new universalPHPmailer;
 
+$mailor->SMTPserver      = 'smtp.gmail.com';
+$mailor->SMTPport        = 587;
+$mailor->SMTPusername    = 'example@gmail.com';
+$mailor->SMTPpassword    = '************************';
+$mailor->forceSMTPsecure = true;
+$mailor->CAfile          = '/path/to/cacert.pem';
+$mailor->SMTPhelo        = 'www.myamazingwebsite.com';
+$mailor->CacheDir        = '/path/to/cache_dir';
+$mailor->hostName        = 'myamazingwebsite.com';
+
 $mailor->RecipientTo = array(
                             'mao@backintime.sample' => $mailor->formatDisplayName('Mao "Chairman" 毛泽东')
                             );
 
 $mailor->Subject    = '請問';
 $mailor->SenderFrom = array('james.jones@hotmai1.con' => $mailor->formatDisplayName('James J. Jones'));
-$mailor->hostName   = 'host.name.sample';
-$mailor->CacheDir   = '/srv/cache'; # Your chache directory
 
 $mailor->textPlain = 'Hi 泽东,
 
@@ -302,7 +313,7 @@ if (!empty($msgID)) {
 }
 
 ```
-
+~
 ## Acknowledgements
 
 Peter Kahl had written much of the SMTP-related methods of this package as a result of inspiration from the following class and extends his thanks to the authors thereof:

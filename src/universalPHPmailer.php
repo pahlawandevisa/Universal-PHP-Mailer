@@ -240,8 +240,14 @@ class universalPHPmailer {
    */
   private $SanitisedSubject;
 
+  /**
+   * @var string
+   */
   public $textPlain;
 
+  /**
+   * @var string
+   */
   public $textHtml;
 
   /**
@@ -265,8 +271,7 @@ class universalPHPmailer {
    *       array(
    *            'In-Reply-To' => '<MESSAGE.ID@domain.tld>',
    *            'References'  => '<MESSAGE.ID@domain.tld>',
-   *            'Bcc'         => 'recipient@somewhere',
-   *            'Cc'          => '"Jane Q. Public" (my superior) <jane.p@string.test>',
+   *            'X-License'   => 'LS2P92yoGy4nbeIvWWWpWqjOloZUNO6a',
    *            )
    * This class will econde header value per RFC2047, if multibyte.
    * If you define email address containing header with a display name, make
@@ -372,7 +377,7 @@ class universalPHPmailer {
   /**
    * Maximum length of multibyte segment for use in headers.
    * This is needed for proper line folding.
-   * @var string
+   * @var integer
    */
   const MB_LEN_MAX = 7;
 
@@ -384,10 +389,13 @@ class universalPHPmailer {
 
   /**
    * Character set of the message
-   *
+   * @var string
    */
   const CHARSET = 'utf-8';
 
+  /**
+   * @var integer
+   */
   private $SMTPsocket;
 
   /**
@@ -396,6 +404,9 @@ class universalPHPmailer {
    */
   private $SMTPextensions;
 
+  /**
+   * @var integer
+   */
   private $EpochConnectionOpened;
 
   /**
@@ -410,8 +421,14 @@ class universalPHPmailer {
    */
   private $CounterReject;
 
+  /**
+   * @var integer
+   */
   private $last_reply;
 
+  /**
+   * @var integer
+   */
   private $mtypes;
 
   #===================================================================
@@ -921,6 +938,9 @@ class universalPHPmailer {
 
   #===================================================================
 
+  /**
+   * @return boolean
+   */
   private function isConnectionOpen() {
     if (empty($this->SMTPsocket)) {
       return false;
@@ -938,6 +958,10 @@ class universalPHPmailer {
 
   #===================================================================
 
+  /**
+   * @param  string
+   * @return string
+   */
   private function sanitiseHeader($str) {
     if (empty($str)) {
       return '';
@@ -947,6 +971,10 @@ class universalPHPmailer {
 
   #===================================================================
 
+  /**
+   * Composes the whole string of mail message.
+   * @throws \Exception
+   */
   private function composeMessage() {
 
     $this->mimeHeaders = array();
@@ -986,7 +1014,7 @@ class universalPHPmailer {
     }
 
     if ($this->Xmailer === true) {
-      $this->mimeHeaders[] = $this->foldLine('X-Mailer: universalPHPmailer/'. self::VERSION .' (https://github.com/peterkahl/Universal-PHP-Mailer)');
+      $this->mimeHeaders[] = $this->foldLine('X-Mailer: Version/'. self::VERSION .' <https://github.com/peterkahl/Universal-PHP-Mailer>');
     }
     elseif (is_string($this->Xmailer) && strlen($this->Xmailer) > 0) {
       $this->mimeHeaders[] = $this->foldLine('X-Mailer: '. $this->sanitiseHeader($this->Xmailer));
@@ -1162,6 +1190,12 @@ class universalPHPmailer {
 
   #===================================================================
 
+  /**
+   * Generates string containing all MIME inline image parts from
+   * the private array inlineImage.
+   * @param  string
+   * @return string
+   */
   private function generateInlineImageParts($boundaryKey) {
     $str = '';
     foreach ($this->inlineImage as $key => $val) {
@@ -1182,6 +1216,7 @@ class universalPHPmailer {
    * Add an image to the private array inlineImage
    * @param  string
    * @return string ... The cid, which you need in your HTML markup.
+   * @throws \Exception
    */
   public function addInlineImage($filename) {
     if (empty($this->hostName)) {
@@ -1220,6 +1255,12 @@ class universalPHPmailer {
 
   #===================================================================
 
+  /**
+   * Generates string containing all MIME attachment parts from
+   * the private array attachment.
+   * @param  string
+   * @return string
+   */
   private function generateAttachmentParts($boundaryKey) {
     $str = '';
     foreach ($this->attachment as $key => $val) {
@@ -1238,9 +1279,15 @@ class universalPHPmailer {
 
   #===================================================================
 
+  /**
+   * Adds attachment to the private array attachment.
+   * @param  string
+   * @return string
+   * @throws \Exception
+   */
   public function addAttachment($filename) {
     if (!file_exists($filename)) {
-      throw new Exception('Could not read/find file "'. $filename.'"');
+      throw new Exception('Could not read/find file "'. $filename .'"');
     }
 
     $this->attachment[$this->attachmentKey]['original-filename'] = rawurlencode($this->endExplode('/', $filename));
@@ -1266,6 +1313,11 @@ class universalPHPmailer {
 
   #===================================================================
 
+  /**
+   * Returns MIME boundary corresponding to a given key.
+   * @param  string
+   * @return string
+   */
   private function getBoundary($key) {
     if (empty($this->rbstr)) {
       $this->rbstr = strtoupper(sha1(microtime(true)));
@@ -1289,6 +1341,11 @@ class universalPHPmailer {
 
   #===================================================================
 
+  /**
+   * Returns the Message ID header
+   * @return string
+   * @throws \Exception
+   */
   private function getHeaderMessageId() {
     if (empty($this->hostName)) {
       throw new Exception('Undefined property hostName');
@@ -1301,6 +1358,10 @@ class universalPHPmailer {
 
   #===================================================================
 
+  /**
+   * Returns a randomly generated string of base-36 characters.
+   * @return string
+   */
   private function ranStr() {
     $bytes = 6;
     $len   = 8;
@@ -1324,14 +1385,11 @@ class universalPHPmailer {
   #===================================================================
 
   /**
-   * RFC5322
-   * https://tools.ietf.org/html/rfc5322.html
-   * Note:
-   *     Time zone abbreviation in braces is considered
-   *     a comment. This is compliant with RFC5322.
+   * Returns the Date header as per RFC5322
+   * @return string
    */
   private function getHeaderDate() {
-    return 'Date: '. date('D, j M Y H:i:s O (T)');
+    return 'Date: '. date('r (T)');
   }
 
   #===================================================================
@@ -1339,9 +1397,9 @@ class universalPHPmailer {
   /**
    * Formats display name in headers per RFC5322.
    * NOTE: Use this method if you want to avoid some unpleasant surprises.
-   *
-   * name    @var string ..... unquoted and unescaped display name
-   * comment @var string ..... without braces, ASCII only; optional
+   * @param  string .... name ...... unquoted and unescaped display name
+   * @param  string .... comment ... without braces, ASCII only; optional
+   * @return string
    */
   public function formatDisplayName($name, $comment = '') {
     if (preg_match('~[,;:\(\)\[\]\.\\<>@"]~', $name)) {
@@ -1361,9 +1419,10 @@ class universalPHPmailer {
   #===================================================================
 
   /**
-   * Make sure that display name ($name) is formated per RFC5322.
-   * The easiest would be to use the method 'formatDisplayName' to assure
-   * compliance with RFC5322.
+   * Encodes name header
+   * @param  string .... name ... header name
+   * @param  array ..... arr .... array(email => displayname)
+   * @return string
    */
   private function encodeNameHeader($hdr, $arr) {
     $new = array();
@@ -1380,6 +1439,13 @@ class universalPHPmailer {
 
   #===================================================================
 
+  /**
+   * Encodes header
+   * @param  string .... name ... header name
+   * @param  string .... str .... value of the header
+   * @param  boolean ... fold ... enable folding of long lines
+   * @return string
+   */
   private function encodeHeader($hdr, $str, $fold = true) {
     if ($fold) {
       return $this->foldLine($hdr .': '. $this->encodeString($str));
@@ -1391,7 +1457,8 @@ class universalPHPmailer {
 
   /**
    * Takes a string and encodes only those substrings that are non-ASCII.
-   *
+   * @param  string
+   * @return string
    */
   private function encodeString($str) {
     $str = preg_replace('/\s+/', ' ', $str);
@@ -1444,7 +1511,8 @@ class universalPHPmailer {
 
   /**
    * Break string of multibyte characters into shorter segments
-   *
+   * @param  string
+   * @return string
    */
   private function break2segments($str) {
     $chars = preg_split('//u', $str, -1, PREG_SPLIT_NO_EMPTY); # array
@@ -1470,7 +1538,8 @@ class universalPHPmailer {
   /**
    * MIME Encode Non-ASCII Text
    * https://tools.ietf.org/html/rfc2047
-   *
+   * @param  string
+   * @return string
    */
   private function encodeRFC2047($str) {
     return '=?'. self::CHARSET .'?B?'. base64_encode($str) .'?=';
@@ -1478,6 +1547,11 @@ class universalPHPmailer {
 
   #===================================================================
 
+  /**
+   * Tells whether string contains a multibyte character.
+   * @param  string
+   * @return boolean
+   */
   private function isMultibyteString($str) {
     return iconv_strlen($str, 'utf-8') < strlen($str);
   }
@@ -1491,6 +1565,9 @@ class universalPHPmailer {
    *     Headers with FWS (folding white space) may cause
    *     DKIM validation failures. In such case, you may
    *     need to set DKIM Canonicalization to 'relaxed'.
+   * @param  string
+   * @return string
+   * @throws \Exception
    */
   private function foldLine($str) {
     if (strlen($str) <= self::WRAP_LEN) {
@@ -1521,6 +1598,8 @@ class universalPHPmailer {
   /**
    * Check for total length limit per RFC5322.
    * https://tools.ietf.org/html/rfc5322.html#section-3.2.2
+   * @param  string
+   * @return boolean
    */
   private function isHeaderTooLong($str) {
     if (strlen($str) > self::LINE_LEN_MAX) {
@@ -1531,6 +1610,9 @@ class universalPHPmailer {
 
   #===================================================================
 
+  /**
+   * Sets a valid value of the property textEncoding.
+   */
   private function setEncoding() {
     if (!empty($this->textEncoding) && in_array($this->textEncoding, array('quoted-printable', 'base64'))) {
       return;
@@ -1540,6 +1622,12 @@ class universalPHPmailer {
 
   #===================================================================
 
+  /**
+   * Encodes body string.
+   * https://tools.ietf.org/html/rfc5322.html#section-3.2.2
+   * @param  string
+   * @return string
+   */
   private function encodeBody($str) {
     if ($this->textEncoding == 'quoted-printable') {
       return $this->qpEncode($str) . self::CRLF;
@@ -1551,7 +1639,8 @@ class universalPHPmailer {
 
   /**
    * quoted-printable encoding is being dot-stuffed only for 'smtp'
-   *
+   * @param  string
+   * @return string
    */
   private function qpEncode($str) {
     $str = quoted_printable_encode($str);
@@ -1563,6 +1652,12 @@ class universalPHPmailer {
 
   #===================================================================
 
+  /**
+   * Returns last element of an array.
+   * @param  string
+   * @param  array
+   * @return string
+   */
   private function endExplode($glue, $str) {
     if (strpos($str, $glue) === false) {
       return $str;
@@ -1574,6 +1669,12 @@ class universalPHPmailer {
 
   #===================================================================
 
+  /**
+   * Parses filename to return extension.
+   * @param  string
+   * @return string
+   * @throws \Exception
+   */
   private function fileExtension($str) {
     if (strpos($str, '.') === false) {
       throw new Exception('File name has no extension');
@@ -1586,6 +1687,11 @@ class universalPHPmailer {
 
   #===================================================================
 
+  /**
+   * Writes to debug log or screen.
+   * @param  string
+   * @throws \Exception
+   */
   private function debug($str) {
     if ($this->debugEnable) {
       if ($this->debugMethod == 'echo') {
@@ -1602,6 +1708,11 @@ class universalPHPmailer {
 
   #===================================================================
 
+  /**
+   * Generates a line with timestamp and appends it to the debug log.
+   * Timestamp has microsend resolution.
+   * @param  string
+   */
   private function appendLog($str) {
     $str = trim($str);
     if (strlen($str) > 1000) {
@@ -1613,9 +1724,20 @@ class universalPHPmailer {
 
   #===================================================================
 
+  /**
+   * File Append Contents
+   * @param  string .... file
+   * @return mixed (but usually integer)
+   * @throws \Exception
+   */
   private function FileAppendContents($file, $str) {
     $fileObj = new SplFileObject($file, 'a');
+    $k = 0;
     while (!$fileObj->flock(LOCK_EX)) {
+      $k++;
+      if ($k > 1000000) {
+        throw new Exception('Taking >1 sec to lock this file');
+      }
       usleep(1);
     }
     $bytes = $fileObj->fwrite($str);
@@ -1625,9 +1747,20 @@ class universalPHPmailer {
 
   #===================================================================
 
+  /**
+   * File Get Contents
+   * @param  string .... file
+   * @return string
+   * @throws \Exception
+   */
   private function FileGetContents($file) {
     $fileObj = new SplFileObject($file, 'r');
+    $k = 0;
     while (!$fileObj->flock(LOCK_EX)) {
+      $k++;
+      if ($k > 1000000) {
+        throw new Exception('Taking >1 sec to lock this file');
+      }
       usleep(1);
     }
     $str = $fileObj->fread($fileObj->getSize());
@@ -1637,6 +1770,12 @@ class universalPHPmailer {
 
   #===================================================================
 
+  /**
+   * Human-readable representation of a precisely quantified
+   * time interval between 2 time points, one being right now.
+   * @param  integer .... timestamp in the past
+   * @return string
+   */
   private function Benchmark($st) {
     $val = (microtime(true) - $st);
     if ($val >= 1) {
