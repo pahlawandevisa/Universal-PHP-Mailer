@@ -2,9 +2,9 @@
 /**
  * Universal PHP Mailer
  *
- * @version    3.9 (2018-05-04 08:45:00 GMT)
+ * @version    3.10 (2018-05-22 06:41:00 GMT)
  * @author     Peter Kahl <https://github.com/peterkahl>
- * @copyright  2016-2017 Peter Kahl
+ * @copyright  2016-2018 Peter Kahl
  * @license    Apache License, Version 2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -42,7 +42,7 @@ class universalPHPmailer {
    * Version
    * @var string
    */
-  const VERSION = '3.9';
+  const VERSION = '3.10';
 
   /**
    * Method used to send mail
@@ -55,24 +55,45 @@ class universalPHPmailer {
    * Hostname of SMTP server we are connecting to.
    * @var string
    * For local SMTP server, try 'localhost'.
+   * For Gmail SMTP server, try 'localhost'.
    */
   public $SMTPserver     = 'localhost';
 
-  public $SMTPport       = '25';
+  /**
+   * SMTP port to connect to
+   * @var integer
+   */
+  public $SMTPport       = 25;
 
-  public $SMTPtimeout    = '30';
+  /**
+   * SMTP timeout
+   * @var integer
+   */
+  public $SMTPtimeout    = 30;
 
-  public $SMTPtimeLimit  = '30';
+  /**
+   * SMTP time limit
+   * @var integer
+   */
+  public $SMTPtimeLimit  = 30;
 
+  /**
+   * SMTP login user name
+   * @var string
+   */
   public $SMTPusername   = '';
 
+  /**
+   * SMTP login password
+   * @var string
+   */
   public $SMTPpassword   = '';
 
   /**
-   * Require SMTP connection to be secure
-   * @var boolean
+   * Require SMTP connection to be secure.
    * If you're using a remote SMTP server, you should be using secure
    * connection.
+   * @var boolean
    */
   public $forceSMTPsecure = false;
 
