@@ -27,10 +27,9 @@ Once we need to send a mail with 2 or more contents (regardless of category), we
 | Case | text/plain | text/html | inline image | attachment |
 | :---:|:----------:| :--------:| :-----------:| :---------:|
 | 4    |      -     |     -     |      -       |     ≥ 2    |
-| 5    |      1     |     1     |      -       |     ≥ 0    |
+| 5    |      -     |     1     |      ≥ 0     |     ≥ 1    |
 | 6    |      -     |     1     |      ≥ 1     |     ≥ 0    |
-| 7    |      -     |     1     |      ≥ 0     |     ≥ 1    |
-| 8    |      1     |     1     |      ≥ 0     |     ≥ 0    |
+| 7    |      1     |     1     |      ≥ 0     |     ≥ 0    |
 
 
 ## Considerations
