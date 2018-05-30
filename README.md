@@ -1,15 +1,19 @@
-# Universal PHP Mailer
+# Universal PHP Mailer🧞‍♂️
 
 [![Downloads](https://img.shields.io/packagist/dt/peterkahl/universal-php-mailer.svg)](https://packagist.org/packages/peterkahl/universal-php-mailer)
 [![License](http://img.shields.io/:license-apache-blue.svg)](http://www.apache.org/licenses/LICENSE-2.0.html)
 [![If this project has business value for you then don't hesitate to support me with a small donation.](https://img.shields.io/badge/Donations-via%20Paypal-blue.svg)](https://www.paypal.me/PeterK93)
 
-Easy to use yet powerful PHP mailer capable of sending any type of content including plain text, HTML, inline images, and any kind and any number of attachments, hence *Universal*.
+Easy to use mailer capable of sending any type of content including plain text, HTML, inline images, and any kind and any number of attachments. The value of this library lies in that it generates whole mail string including all headers in compliance with standards, while being very simple to integrate into your system.  
 
-### Self-configuring
-If you have ever tried composing multipart MIME mail, you will know how cumbersome it can be. With *Universal PHP Mailer* you will no longer struggle figuring out where you put "this and that" content and within which boundary and in which order. *Universal PHP Mailer* is self-configuring. Just give it whatever content you have and fire it off. It will compose the correct MIME-compliant mail string with whatever parts, multiparts and boundaries are necessary.
+### Automatic Configuration & Ease of Integration
 
-### Efficiency for High Volume (Bulk) Mailing
+Say, you want to email a message consisting *only* of a PDF attachment. Nothing else. No text. How do you do that? You need not worry! Take your attachment, apply it to the Mailer and voila! Done.
+
+Say, you want to email a message consisting of text/plain, text/html, several inline images and several attachments of various kind. How do you do that? You need not worry! Take all and any of your content, apply it to the Mailer and voila! Done.
+
+### Efficiency for Bulk Mailing
+
 When using the `SMTP` method, the mailer reuses the same socket connection for sending multiple messages, thus achieving better efficiency than the `mail()` function method.
 
 ### Handles Any Kind of Content
@@ -32,38 +36,25 @@ Once we need to send a mail with 2 or more contents (regardless of category), we
 | 7    |      1     |     1     |      ≥ 0     |     ≥ 0    |
 
 
-## Considerations
-
-This package applies some measures in order to mitigate malicious abuse attempts. Despite this, it is advised that you always validate and/or sanitise all user input.
-
-- You should validate and santise all email addresses.
-- You should filter out (sanitise) line breaks `\n` from header strings.
-
-### Email Address Format
-
-This package requires that email addresses be compliant with RFC5322 (i.e. contain only printable ASCII characters). If you intend to use IDN and Unicode character email addresses, you must convert them to ASCII before applying them to this package.
-
-### Email Address Validation
-
-This package uses simple email address validation. It is advised that you validate all email addresses before applying them to this package.
-
 ## Usage Examples
 
 #### The Basics
+
 ```php
 use peterkahl\universalPHPmailer\universalPHPmailer;
 
 $mailor = new universalPHPmailer;
 
-$mailor->SMTPserver      = 'smtp.gmail.com';
-$mailor->SMTPport        = 587;
-$mailor->SMTPusername    = 'example@gmail.com';
-$mailor->SMTPpassword    = '************************';
-$mailor->forceSMTPsecure = true;
-$mailor->CAfile          = '/path/to/cacert.pem';
-$mailor->SMTPhelo        = 'www.myamazingwebsite.com';
-$mailor->CacheDir        = '/path/to/cache_dir';
-$mailor->hostName        = 'myamazingwebsite.com';
+// Set the parameters
+$mailor->SMTPserver      = 'smtp.gmail.com';           # The SMTP host we will connect to
+$mailor->SMTPport        = 587;                        # using this port
+$mailor->SMTPusername    = 'example@gmail.com';        # username for authentication
+$mailor->SMTPpassword    = '************************'; # password
+$mailor->forceSMTPsecure = true;                       # Use only encrypted connection
+$mailor->CAfile          = '/path/to/cacert.pem';      # Where we keep the CA bundle
+$mailor->SMTPhelo        = 'www.myamazingwebsite.com'; # Our HELO hostname
+$mailor->CacheDir        = '/path/to/cache_dir';       # Writeable directory
+$mailor->hostName        = 'myamazingwebsite.com';     # For Message ID header
 
 // Subject. What's this about.
 $mailor->Subject = 'Vibrant growth on epic scale';
@@ -109,7 +100,7 @@ J.J.';
 $msgID = $mailor->sendMessage();
 
 if (!empty($msgID)) {
-  echo 'Successfully sent message ID ..... '. $msgID;
+  echo 'Successfully sent message '. $msgID;
 }
 
 ```
@@ -126,7 +117,7 @@ $mailor->textHtml  = '<body>
 $msgID = $mailor->sendMessage();
 
 if (!empty($msgID)) {
-  echo 'Successfully sent message ID ..... '. $msgID;
+  echo 'Successfully sent message '. $msgID;
 }
 
 ```
@@ -149,7 +140,7 @@ $mailor->textHtml  = '<body>
 $msgID = $mailor->sendMessage();
 
 if (!empty($msgID)) {
-  echo 'Successfully sent message ID ..... '. $msgID;
+  echo 'Successfully sent message '. $msgID;
 }
 
 ```
@@ -179,7 +170,7 @@ $mailor->textHtml  = '<body>
 $msgID = $mailor->sendMessage();
 
 if (!empty($msgID)) {
-  echo 'Successfully sent message ID ..... '. $msgID;
+  echo 'Successfully sent message '. $msgID;
 }
 
 ```
@@ -213,7 +204,7 @@ $mailor->textHtml  = '<body>
 $msgID = $mailor->sendMessage();
 
 if (!empty($msgID)) {
-  echo 'Successfully sent message ID ..... '. $msgID;
+  echo 'Successfully sent message '. $msgID;
 }
 
 ```
@@ -266,7 +257,7 @@ foreach ($recipientArr as $recipient) {
   $msgID = $mailor->sendMessage();
 
   if (!empty($msgID)) {
-    echo 'Successfully sent message ID ..... '. $msgID .' .... To: '. $recipient['email'] . PHP_EOL;
+    echo 'Successfully sent message '. $msgID .' .... To: '. $recipient['email'] . PHP_EOL;
   }
 }
 
@@ -308,11 +299,31 @@ J.J.J.';
 $msgID = $mailor->sendMessage();
 
 if (!empty($msgID)) {
-  echo 'Successfully sent message ID ..... '. $msgID;
+  echo 'Successfully sent message '. $msgID;
 }
 
 ```
-~
+
+***
+
+## Considerations
+
+This package applies some measures in order to mitigate malicious abuse attempts. Despite this, it is advised that you always validate and/or sanitise all user input.
+
+- You should validate and santise all email addresses.
+- You should filter out (sanitise) line breaks `\n` from header strings.
+
+### Email Address Format
+
+This package requires that email addresses be compliant with RFC5322 (i.e. contain only printable ASCII characters). If you intend to use IDN and Unicode character email addresses, you must convert them to ASCII before applying them to this package.
+
+### Email Address Validation
+
+This package uses simple email address validation. It is advised that you validate all email addresses before applying them to this package.
+
+
+***
+
 ## Acknowledgements
 
 Peter Kahl had written much of the SMTP-related methods of this package as a result of inspiration from the following class and extends his thanks to the authors thereof:
