@@ -2,7 +2,7 @@
 /**
  * Universal PHP Mailer
  *
- * @version    3.11 (2018-05-22 07:09:00 GMT)
+ * @version    3.12 (2018-06-07 05:02:00 GMT)
  * @author     Peter Kahl <https://github.com/peterkahl>
  * @copyright  2016-2018 Peter Kahl
  * @license    Apache License, Version 2.0
@@ -42,7 +42,7 @@ class universalPHPmailer {
    * Version
    * @var string
    */
-  const VERSION = '3.11';
+  const VERSION = '3.12';
 
   /**
    * Method used to send mail
@@ -263,6 +263,13 @@ class universalPHPmailer {
    * @var string (e.g. 'en-gb')
    */
   public $textContentLanguage;
+
+  /**
+   * Date string for the Date header (optional).
+   * Must conform to RFC5322
+   * @var string
+   */
+  public $DateHeaderStr;
 
   /**
    * Specify custom headers, if any
@@ -1389,7 +1396,10 @@ class universalPHPmailer {
    * @return string
    */
   private function getHeaderDate() {
-    return 'Date: '. date('r (T)');
+    if (empty($this->DateHeaderStr)) {
+      return 'Date: '. date('r (T)');
+    }
+    return 'Date: '. $this->sanitiseHeader($this->DateHeaderStr);
   }
 
   #===================================================================
