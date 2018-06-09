@@ -4,7 +4,7 @@
 [![License](http://img.shields.io/:license-apache-blue.svg)](http://www.apache.org/licenses/LICENSE-2.0.html)
 [![If this project has business value for you then don't hesitate to support me with a small donation.](https://img.shields.io/badge/Donations-via%20Paypal-blue.svg)](https://www.paypal.me/PeterK93)
 
-Easy to use mailer capable of sending any type of content including plain text, HTML, inline images, and any kind and any number of attachments. The value of this library lies in that it generates whole mail string including all headers in compliance with standards, while being very simple to integrate into your system.  
+Easy to use mailer capable of sending any type of content including plain text, HTML, inline images, and any kind and any number of attachments. The value of this library lies in that it generates whole mail string including all headers in compliance with standards, while being very simple to integrate into your system.
 
 ### Automatic Configuration & Ease of Integration
 

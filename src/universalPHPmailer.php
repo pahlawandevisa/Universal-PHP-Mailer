@@ -2,7 +2,7 @@
 /**
  * Universal PHP Mailer
  *
- * @version    3.12 (2018-06-07 05:02:00 GMT)
+ * @version    4.0 (2018-06-09 06:27:00 GMT)
  * @author     Peter Kahl <https://github.com/peterkahl>
  * @copyright  2016-2018 Peter Kahl
  * @license    Apache License, Version 2.0
@@ -35,6 +35,8 @@ namespace peterkahl\universalPHPmailer;
 
 use \Exception;
 use \SplFileObject;
+use \DateTime;
+use \DateTimeZone;
 
 class universalPHPmailer {
 
@@ -42,7 +44,7 @@ class universalPHPmailer {
    * Version
    * @var string
    */
-  const VERSION = '3.12';
+  const VERSION = '4.0';
 
   /**
    * Method used to send mail
@@ -214,7 +216,7 @@ class universalPHPmailer {
   private $SanitisedBcc;
 
   /**
-   * Sender
+   * Sender for header From.
    * Specify one sender.
    * @var array
    * Valid format --
@@ -223,10 +225,25 @@ class universalPHPmailer {
   public $SenderFrom;
 
   /**
-   * Sanitised version of SenderFrom array
+   * Sanitised version of SenderFrom array.
    * @var array
    */
   private $SanitisedFrom;
+
+  /**
+   * Sender for header Sender.
+   * Specify one sender.
+   * @var array
+   * Valid format --
+   * array(email => name)
+   */
+  public $SenderSender;
+
+  /**
+   * Sanitised version of SenderSender array.
+   * @var array
+   */
+  private $SanitisedSender;
 
   /**
    * Subject
@@ -235,7 +252,7 @@ class universalPHPmailer {
   public $Subject;
 
   /**
-   * Sanitised version of Subject
+   * Sanitised version of Subject.
    * @var string
    */
   private $SanitisedSubject;
@@ -272,6 +289,14 @@ class universalPHPmailer {
   public $DateHeaderStr;
 
   /**
+   * Date header UNIX timezone (optional).
+   * If you define this, the Date header will be converted into
+   * desired timezone, else GMT will be used.
+   * @var string ... Examples: 'Europe/London', 'Asia/Kabul', 'America/Kentucky/Monticello'
+   */
+  public $DateHeaderZone;
+
+  /**
    * Specify custom headers, if any
    * @var array
    * Required structure:
@@ -280,6 +305,7 @@ class universalPHPmailer {
    *            'References'  => '<MESSAGE.ID@domain.tld>',
    *            'X-License'   => 'LS2P92yoGy4nbeIvWWWpWqjOloZUNO6a',
    *            )
+   *
    * This class will econde header value per RFC2047, if multibyte.
    * If you define email address containing header with a display name, make
    * sure you format the display name per RFC5322, or just use the method
@@ -291,6 +317,21 @@ class universalPHPmailer {
    * this package.
    */
   public $customHeaders;
+
+  /**
+   * These headers cannot be defined in the property customHeaders (above).
+   * @var array
+   */
+  private $ReservedHeaders = array(
+    'to',
+    'cc',
+    'bcc',
+    'from',
+    'date',
+    'sender',
+    'x-mailer',
+    'mime-version',
+  );
 
   /**
    * Hostname for use in message ID and for Content-ID.
@@ -438,7 +479,6 @@ class universalPHPmailer {
    */
   private $mtypes;
 
-  #===================================================================
 
   public function __construct() {
     $this->inlineImageKey = 0;
@@ -450,7 +490,6 @@ class universalPHPmailer {
     $this->CounterReject  = 0;
   }
 
-  #===================================================================
 
   public function __destruct() {
     if ($this->mailMethod == 'smtp' && $this->isConnectionOpen()) {
@@ -458,7 +497,6 @@ class universalPHPmailer {
     }
   }
 
-  #===================================================================
 
   public function sendMessage() {
 
@@ -516,7 +554,7 @@ class universalPHPmailer {
         if ($this->ValidEmail($email)) {
           $name = $this->sanitiseHeader($name);
           $this->SanitisedFrom[$email] = $name;
-          $this->fromEmail = $email;
+          $this->fromEmail = $email; # used for SMTP handshake
           $senderDefined = true;
           break;
         }
@@ -524,7 +562,20 @@ class universalPHPmailer {
     }
 
     if (!$senderDefined) {
-      throw new Exception('No valid sender is defined');
+      throw new Exception('No valid From: or Sender: headers defined');
+    }
+
+    $this->SanitisedSender = array();
+    if (!empty($this->SenderSender)) {
+      foreach ($this->SenderSender as $email => $name) {
+        if ($this->ValidEmail($email)) {
+          $name = $this->sanitiseHeader($name);
+          $this->SanitisedSender[$email] = $name;
+          $this->fromEmail = $email; # used for SMTP handshake
+          $senderDefined = true;
+          break;
+        }
+      }
     }
 
     $this->SanitisedSubject = $this->sanitiseHeader($this->Subject);
@@ -588,11 +639,12 @@ class universalPHPmailer {
     }
   }
 
-  #===================================================================
 
   /**
-   * Validates email address
-   *
+   * Validates email address.
+   * @param  string  $str
+   * @return boolean
+   * @throws \Exception
    */
   private function ValidEmail($str) {
     if (preg_match('/^(?!(?:(?:\x22?\x5C[\x00-\x7E]\x22?)|(?:\x22?[^\x5C\x22]\x22?)){255,})(?!(?:(?:\x22?\x5C[\x00-\x7E]\x22?)|(?:\x22?[^\x5C\x22]\x22?)){65,}@)(?:(?:[\x21\x23-\x27\x2A\x2B\x2D\x2F-\x39\x3D\x3F\x5E-\x7E]+)|(?:\x22(?:[\x01-\x08\x0B\x0C\x0E-\x1F\x21\x23-\x5B\x5D-\x7F]|(?:\x5C[\x00-\x7F]))*\x22))(?:\.(?:(?:[\x21\x23-\x27\x2A\x2B\x2D\x2F-\x39\x3D\x3F\x5E-\x7E]+)|(?:\x22(?:[\x01-\x08\x0B\x0C\x0E-\x1F\x21\x23-\x5B\x5D-\x7F]|(?:\x5C[\x00-\x7F]))*\x22)))*@(?:(?:(?!.*[^.]{64,})(?:(?:(?:xn--)?[a-z0-9]+(?:-[a-z0-9]+)*\.){1,126}){1,}(?:(?:[a-z][a-z0-9]*)|(?:(?:xn--)[a-z0-9]+))(?:-[a-z0-9]+)*)|(?:\[(?:(?:IPv6:(?:(?:[a-f0-9]{1,4}(?::[a-f0-9]{1,4}){7})|(?:(?!(?:.*[a-f0-9][:\]]){7,})(?:[a-f0-9]{1,4}(?::[a-f0-9]{1,4}){0,5})?::(?:[a-f0-9]{1,4}(?::[a-f0-9]{1,4}){0,5})?)))|(?:(?:IPv6:(?:(?:[a-f0-9]{1,4}(?::[a-f0-9]{1,4}){5}:)|(?:(?!(?:.*[a-f0-9]:){5,})(?:[a-f0-9]{1,4}(?::[a-f0-9]{1,4}){0,3})?::(?:[a-f0-9]{1,4}(?::[a-f0-9]{1,4}){0,3}:)?)))?(?:(?:25[0-5])|(?:2[0-4][0-9])|(?:1[0-9]{2})|(?:[1-9]?[0-9]))(?:\.(?:(?:25[0-5])|(?:2[0-4][0-9])|(?:1[0-9]{2})|(?:[1-9]?[0-9]))){3}))\]))$/iD', $str)) {
@@ -601,8 +653,11 @@ class universalPHPmailer {
     throw new Exception('Invalid email address');
   }
 
-  #===================================================================
 
+  /**
+   * Handshakes and mail sending with SMTP server.
+   * @return boolean
+   */
   private function SMTPmail() {
 
     $this->debug('---------------------------------------------------------');
@@ -646,8 +701,12 @@ class universalPHPmailer {
     return true;
   }
 
-  #===================================================================
 
+  /**
+   * Establishes connection (optionally SSL secure, authenticated)
+   * with SMTP server.
+   * @return boolean
+   */
   private function SMTPconnectionOpen() {
     # Start the stopwatch, counters.
     $this->EpochConnectionOpened = microtime(true);
@@ -727,8 +786,6 @@ class universalPHPmailer {
       return false;
     }
 
-    #---------------------------------------------------------
-
     if ($this->isCapable('AUTH')) {
       if (!$this->authenticate()) {
         $this->debug('ERROR: Authentication failed.');
@@ -736,13 +793,14 @@ class universalPHPmailer {
       }
     }
 
-    #---------------------------------------------------------
-
     return true; # Successfully connected to server.
   }
 
-  #===================================================================
 
+  /**
+   *
+   *
+   */
   private function isCapable($ext) {
     if (empty($this->SMTPextensions)) {
       return false;
@@ -750,8 +808,11 @@ class universalPHPmailer {
     return array_key_exists($ext, $this->SMTPextensions);
   }
 
-  #===================================================================
 
+  /**
+   *
+   *
+   */
   private function authenticate() {
 
     if (empty($this->SMTPusername) || empty($this->SMTPpassword)) {
@@ -774,7 +835,6 @@ class universalPHPmailer {
     }
 
     switch ($this->SMTPauthMech) {
-      #--------------------------------------------
       case 'PLAIN':
         if (!$this->sendCommand('AUTH PLAIN', 334)) {
           return false;
@@ -783,7 +843,6 @@ class universalPHPmailer {
           return false;
         }
         break;
-      #--------------------------------------------
       case 'LOGIN':
         if (!$this->sendCommand('AUTH LOGIN', 334)) {
           return false;
@@ -795,7 +854,6 @@ class universalPHPmailer {
           return false;
         }
         break;
-      #--------------------------------------------
       case 'CRAM-MD5':
         if (!$this->sendCommand('AUTH CRAM-MD5', 334)) {
           return false;
@@ -806,7 +864,6 @@ class universalPHPmailer {
           return false;
         }
         break;
-      #--------------------------------------------
       default:
         $this->debug('ERROR: Unsupported authentication mechanism '. $this->SMTPauthMech);
         return false;
@@ -815,14 +872,15 @@ class universalPHPmailer {
     return true;
   }
 
-  #===================================================================
 
+  /**
+   *
+   *
+   */
   private function startTLS() {
-
     if (!$this->sendCommand('STARTTLS', 220)) {
       return false;
     }
-
     $method = STREAM_CRYPTO_METHOD_TLS_CLIENT;
     if (defined('STREAM_CRYPTO_METHOD_TLSv1_2_CLIENT')) {
       $method |= STREAM_CRYPTO_METHOD_TLSv1_2_CLIENT;
@@ -830,7 +888,6 @@ class universalPHPmailer {
     }
     $this->debug('Selected CRYPTO METHOD '. $method);
     stream_socket_enable_crypto($this->SMTPsocket, true, $method);
-
     if (!$this->sendCommand('EHLO '. $this->SMTPhelo, 250)) {
       return false;
     }
@@ -846,12 +903,14 @@ class universalPHPmailer {
 250 SMTPUTF8
 */
     $this->updateExtensionList();
-
     return true;
   }
 
-  #===================================================================
 
+  /**
+   *
+   *
+   */
   private function updateExtensionList() {
     $ext = explode(self::CRLF, trim($this->last_reply));
     foreach ($ext as $val) {
@@ -872,46 +931,42 @@ class universalPHPmailer {
     }
   }
 
-  #===================================================================
 
+  /**
+   * Closes SMTP connection.
+   *
+   */
   private function SMTPconnectionClose() {
-
     $this->debug('---------------------------------------------------------');
-
     $this->sendCommand('QUIT', 221);
-
     $this->debug('---------------------------------------------------------');
-
     $this->debug('MESSAGES-SENT: '. $this->CounterSuccess .'; MESSAGES-REJECTED: '. $this->CounterReject .'; CONNECTION-TIME: '. $this->Benchmark($this->EpochConnectionOpened));
-
     fclose($this->SMTPsocket);
     $this->SMTPsocket = null;
     $this->EpochConnectionOpened = null;
   }
 
-  #===================================================================
 
+  /**
+   * Sends SMTP commands.
+   * @param  string  $commandstring
+   * @param  mixed   $expect
+   * @return boolean
+   */
   private function sendCommand($commandstring, $expect) {
-
     $this->debug('>>> '. $commandstring);
-
     fwrite($this->SMTPsocket, $commandstring . self::CRLF);
-
     $this->last_reply = $this->get_lines();
-
     $this->debug('<<< '. $this->last_reply);
-
     $code = substr($this->last_reply, 0, 3);
-
-    if (!in_array($code, (array)$expect)) {
-      return false;
-    }
-
-    return true;
+    return !in_array($code, (array)$expect) ? false : true;
   }
 
-  #===================================================================
 
+   /**
+    * Fetches data from socket connection.
+    * @return string
+    */
   private function get_lines() {
     # If the connection is bad, give up straight away
     if (!is_resource($this->SMTPsocket)) {
@@ -943,9 +998,9 @@ class universalPHPmailer {
     return $data;
   }
 
-  #===================================================================
 
   /**
+   * Is connection open?
    * @return boolean
    */
   private function isConnectionOpen() {
@@ -963,10 +1018,10 @@ class universalPHPmailer {
     return false;
   }
 
-  #===================================================================
 
   /**
-   * @param  string
+   * Sanitises header.
+   * @param  string  $str
    * @return string
    */
   private function sanitiseHeader($str) {
@@ -976,7 +1031,6 @@ class universalPHPmailer {
     return preg_replace("/(?:\n|\r|\t|%0A|%0D|%08|%09)+/i", '', $str);
   }
 
-  #===================================================================
 
   /**
    * Composes the whole string of mail message.
@@ -1008,12 +1062,22 @@ class universalPHPmailer {
       $this->mimeHeaders[] = $this->encodeNameHeader('Bcc', $this->SanitisedBcc);
     }
 
+    if (!empty($this->SanitisedFrom)) {
+      $this->mimeHeaders[] = $this->encodeNameHeader('From', $this->SanitisedFrom);
+    }
+
+    if (!empty($this->SanitisedSender)) {
+      $this->mimeHeaders[] = $this->encodeNameHeader('Sender', $this->SanitisedSender);
+    }
+
     $this->mimeHeaders[] = $this->getHeaderDate();
     $this->mimeHeaders[] = $this->getHeaderMessageId();
-    $this->mimeHeaders[] = $this->encodeNameHeader('From', $this->SanitisedFrom);
 
     if (!empty($this->customHeaders) && is_array($this->customHeaders)) {
       foreach ($this->customHeaders as $key => $val) {
+        if ($this->isReservedHeader($key)) {
+          throw new Exception('The header '. $key .' cannot be defined in array customHeaders');
+        }
         $key = $this->sanitiseHeader($key);
         $val = $this->sanitiseHeader($val);
         $this->mimeHeaders[] = $this->encodeHeader($key, $val);
@@ -1032,7 +1096,6 @@ class universalPHPmailer {
     $multiTypes = array();
     $i = -1;
 
-    #---------------------------------------------------
 
     if (!empty($this->attachment) && count($this->attachment) > 1 && empty($this->textPlain) && empty($this->textHtml)) {
       # Multiple attachment and nothing else
@@ -1068,7 +1131,6 @@ class universalPHPmailer {
       if (!empty($this->textPlain) && !empty($this->textHtml)) {
         $i++;
         $multiTypes[$i] = 'multipart/alternative';
-        #----
         $i++;
         $multiTypes[$i] = 'multipart/related';
       }
@@ -1078,7 +1140,7 @@ class universalPHPmailer {
       }
     }
 
-    #---------------------------------------------------
+
     if ($i > -1) { # Multipart
       $go  = true;
       $k   = 0;
@@ -1094,24 +1156,20 @@ class universalPHPmailer {
             # First multipart section announcement
             $this->mimeHeaders[] = 'Content-Type: '. $multiTypes[$k] .';';
             $this->mimeHeaders[] = "\tboundary=\"". $this->getBoundary($multiTypes[$k]) .'"';
-            #-----------------
             # boundary START
             if (!empty($this->textPlain) || !empty($this->textHtml)) {
               $this->mimeBody .= '--'. $this->getBoundary($multiTypes[$k]) . self::CRLF;
             }
-            #-----------------
           }
           else {
             # 2nd, 3rd ... announcement
             $this->mimeBody .= 'Content-Type: '. $multiTypes[$k] .';'. self::CRLF;
             $this->mimeBody .= "\tboundary=\"". $this->getBoundary($multiTypes[$k]) .'"'. self::CRLF;
             $this->mimeBody .= self::CRLF;
-            #-----------------
             # boundary START
             $this->mimeBody .= '--'. $this->getBoundary($multiTypes[$k]) . self::CRLF;
-            #-----------------
           }
-          #-----------------
+
           if ($multiTypes[$k] == 'multipart/alternative') {
             if (!empty($this->textContentLanguage)) {
               $this->mimeBody .= 'Content-Language: '. $this->textContentLanguage . self::CRLF;
@@ -1120,10 +1178,8 @@ class universalPHPmailer {
             $this->mimeBody .= 'Content-Transfer-Encoding: '. $this->textEncoding . self::CRLF;
             $this->mimeBody .= self::CRLF;
             $this->mimeBody .= $this->encodeBody(trim($this->textPlain)) . self::CRLF;
-            #-----------------
             # boundary
             $this->mimeBody .= '--'. $this->getBoundary($multiTypes[$k]) . self::CRLF;
-            #-----------------
           }
           elseif ($multiTypes[$k] == 'multipart/related') {
             if (!empty($this->textContentLanguage)) {
@@ -1137,19 +1193,17 @@ class universalPHPmailer {
               $this->mimeBody .= $this->generateInlineImageParts($multiTypes[$k]);
             }
           }
-          #-----------------
           $k++;
         }
         else {
           # down
-          #-----------------
           if ($multiTypes[$k] == 'multipart/mixed') {
             $this->mimeBody .= $this->generateAttachmentParts($multiTypes[$k]);
           }
-          #-----------------
+
           # boundary END
           $this->mimeBody .= '--'. $this->getBoundary($multiTypes[$k]) .'--'. self::CRLF . self::CRLF;
-          #-----------------
+
           $k--;
         }
         if ($k == -1) {
@@ -1158,7 +1212,6 @@ class universalPHPmailer {
       }
       $this->mimeBody = rtrim($this->mimeBody) . self::CRLF;
     }
-    #---------------------------------------------------
     else {
       # Not multipart
       if (!empty($this->textPlain)) {
@@ -1195,7 +1248,16 @@ class universalPHPmailer {
     }
   }
 
-  #===================================================================
+
+  /**
+   * Certain headers are not allowed in the custom header array.
+   * @param  string
+   * @return boolean
+   */
+  private function isReservedHeader($str) {
+    return (in_array(strtolower($str), $this->ReservedHeaders));
+  }
+
 
   /**
    * Generates string containing all MIME inline image parts from
@@ -1217,7 +1279,6 @@ class universalPHPmailer {
     return $str;
   }
 
-  #===================================================================
 
   /**
    * Add an image to the private array inlineImage
@@ -1243,11 +1304,9 @@ class universalPHPmailer {
     $this->inlineImage[$this->inlineImageKey]['content-id']        = $cid;
 
     $this->inlineImageKey++;
-
     return $cid;
   }
 
-  #===================================================================
 
   /**
    * Unsets (clears) existing inline images.
@@ -1260,7 +1319,6 @@ class universalPHPmailer {
     $this->inlineImageKey = 0;
   }
 
-  #===================================================================
 
   /**
    * Generates string containing all MIME attachment parts from
@@ -1284,7 +1342,6 @@ class universalPHPmailer {
     return $str;
   }
 
-  #===================================================================
 
   /**
    * Adds attachment to the private array attachment.
@@ -1305,7 +1362,6 @@ class universalPHPmailer {
     $this->attachmentKey++;
   }
 
-  #===================================================================
 
   /**
    * Unsets (clears) existing attachments.
@@ -1318,7 +1374,6 @@ class universalPHPmailer {
     $this->attachmentKey = 0;
   }
 
-  #===================================================================
 
   /**
    * Returns MIME boundary corresponding to a given key.
@@ -1335,7 +1390,6 @@ class universalPHPmailer {
     return $this->boundary[$key];
   }
 
-  #===================================================================
 
   /**
    * Unsets (clears) existing boundary strings.
@@ -1346,7 +1400,6 @@ class universalPHPmailer {
     $this->boundary = array();
   }
 
-  #===================================================================
 
   /**
    * Returns the Message ID header
@@ -1363,7 +1416,6 @@ class universalPHPmailer {
     return 'Message-ID: <'. $this->messageId .'>';
   }
 
-  #===================================================================
 
   /**
    * Returns a randomly generated string of base-36 characters.
@@ -1372,7 +1424,6 @@ class universalPHPmailer {
   private function ranStr() {
     $bytes = 6;
     $len   = 8;
-
     if (function_exists('random_bytes')) {
       $str = bin2hex(random_bytes($bytes));
     }
@@ -1385,30 +1436,32 @@ class universalPHPmailer {
     else {
       $str = substr(sha1(mt_rand() . $this->toEmail), 16);
     }
-
     return substr(strtoupper(base_convert($str, 16, 36)), -$len);
   }
 
-  #===================================================================
 
   /**
-   * Returns the Date header as per RFC5322
+   * Returns the Date header as per RFC5322.
    * @return string
    */
   private function getHeaderDate() {
     if (empty($this->DateHeaderStr)) {
-      return 'Date: '. date('r (T)');
+      if (!empty($this->DateHeaderZone)) {
+        $newObj = new DateTime('now', new DateTimeZone($this->DateHeaderZone));
+        $suffix = !empty($newObj->format('T')) ? ' ('. $newObj->format('T') .')' : '';
+        return 'Date: '. $newObj->format('D, j M Y H:i:s O') . $suffix;
+      }
+      return 'Date: '. gmdate('D, j M Y H:i:s O (T)');
     }
     return 'Date: '. $this->sanitiseHeader($this->DateHeaderStr);
   }
 
-  #===================================================================
 
   /**
    * Formats display name in headers per RFC5322.
    * NOTE: Use this method if you want to avoid some unpleasant surprises.
-   * @param  string .... name ...... unquoted and unescaped display name
-   * @param  string .... comment ... without braces, ASCII only; optional
+   * @param  string  $name ...... unquoted and unescaped display name
+   * @param  string  $comment ... without braces, ASCII only; optional
    * @return string
    */
   public function formatDisplayName($name, $comment = '') {
@@ -1419,19 +1472,18 @@ class universalPHPmailer {
       }
       return '"'. $name .'"';
     }
-    #----
+
     if (!empty($comment)) {
       return '"'. $name .'" ('. $comment .')';
     }
     return $name;
   }
 
-  #===================================================================
 
   /**
    * Encodes name header
-   * @param  string .... name ... header name
-   * @param  array ..... arr .... array(email => displayname)
+   * @param  string  $name ... header name
+   * @param  array   $arr .... array(email => displayname)
    * @return string
    */
   private function encodeNameHeader($hdr, $arr) {
@@ -1447,13 +1499,12 @@ class universalPHPmailer {
     return $this->foldLine($hdr.': '.implode(', ', $new));
   }
 
-  #===================================================================
 
   /**
    * Encodes header
-   * @param  string .... name ... header name
-   * @param  string .... str .... value of the header
-   * @param  boolean ... fold ... enable folding of long lines
+   * @param  string  $hdr .... header name
+   * @param  string  $str .... value of the header
+   * @param  boolean $fold ... enable folding of long lines
    * @return string
    */
   private function encodeHeader($hdr, $str, $fold = true) {
@@ -1463,7 +1514,6 @@ class universalPHPmailer {
     return $hdr .': '. $this->encodeString($str);
   }
 
-  #===================================================================
 
   /**
    * Takes a string and encodes only those substrings that are non-ASCII.
@@ -1499,7 +1549,7 @@ class universalPHPmailer {
           }
         }
       }
-      #----
+
       $str = '';
       foreach ($new as $segm) {
         if ($this->isMultibyteString($segm)) {
@@ -1517,7 +1567,6 @@ class universalPHPmailer {
     return $str;
   }
 
-  #===================================================================
 
   /**
    * Break string of multibyte characters into shorter segments
@@ -1543,7 +1592,6 @@ class universalPHPmailer {
     return $new;
   }
 
-  #===================================================================
 
   /**
    * MIME Encode Non-ASCII Text
@@ -1555,7 +1603,6 @@ class universalPHPmailer {
     return '=?'. self::CHARSET .'?B?'. base64_encode($str) .'?=';
   }
 
-  #===================================================================
 
   /**
    * Tells whether string contains a multibyte character.
@@ -1566,7 +1613,6 @@ class universalPHPmailer {
     return iconv_strlen($str, 'utf-8') < strlen($str);
   }
 
-  #===================================================================
 
   /**
    * Folding of excessively long header lines, RFC5322.
@@ -1603,7 +1649,6 @@ class universalPHPmailer {
     return implode(self::CRLF .' ', $new);
   }
 
-  #===================================================================
 
   /**
    * Check for total length limit per RFC5322.
@@ -1618,7 +1663,6 @@ class universalPHPmailer {
     return false;
   }
 
-  #===================================================================
 
   /**
    * Sets a valid value of the property textEncoding.
@@ -1630,7 +1674,6 @@ class universalPHPmailer {
     $this->textEncoding = 'quoted-printable';
   }
 
-  #===================================================================
 
   /**
    * Encodes body string.
@@ -1645,7 +1688,6 @@ class universalPHPmailer {
     return chunk_split(base64_encode($str), self::WRAP_LEN, self::CRLF);
   }
 
-  #===================================================================
 
   /**
    * quoted-printable encoding is being dot-stuffed only for 'smtp'
@@ -1660,7 +1702,6 @@ class universalPHPmailer {
     return preg_replace('/'. self::CRLF .'\./', self::CRLF .'..', $str);
   }
 
-  #===================================================================
 
   /**
    * Returns last element of an array.
@@ -1677,7 +1718,6 @@ class universalPHPmailer {
     return $str;
   }
 
-  #===================================================================
 
   /**
    * Parses filename to return extension.
@@ -1695,7 +1735,6 @@ class universalPHPmailer {
     return $str;
   }
 
-  #===================================================================
 
   /**
    * Writes to debug log or screen.
@@ -1716,7 +1755,6 @@ class universalPHPmailer {
     }
   }
 
-  #===================================================================
 
   /**
    * Generates a line with timestamp and appends it to the debug log.
@@ -1732,7 +1770,6 @@ class universalPHPmailer {
     $this->FileAppendContents($this->CacheDir . self::LOGFILENAME, '['. gmdate("Y-m-d H:i:s", $sec + $this->serverTZoffset) .'.'. $usec .'] '. $str . PHP_EOL);
   }
 
-  #===================================================================
 
   /**
    * File Append Contents
@@ -1755,7 +1792,6 @@ class universalPHPmailer {
     return $bytes;
   }
 
-  #===================================================================
 
   /**
    * File Get Contents
@@ -1778,7 +1814,6 @@ class universalPHPmailer {
     return $str;
   }
 
-  #===================================================================
 
   /**
    * Human-readable representation of a precisely quantified
@@ -1799,5 +1834,4 @@ class universalPHPmailer {
     return number_format($val, 2, '.', ',') .' μsec';
   }
 
-  #===================================================================
 }
