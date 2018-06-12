@@ -2,7 +2,7 @@
 /**
  * Universal PHP Mailer
  *
- * @version    4.1 (2018-06-12 06:39:00 GMT)
+ * @version    4.2 (2018-06-12 07:28:00 GMT)
  * @author     Peter Kahl <https://github.com/peterkahl>
  * @copyright  2016-2018 Peter Kahl
  * @license    Apache License, Version 2.0
@@ -1099,11 +1099,9 @@ class universalPHPmailer {
     elseif (!empty($this->attachment) && (!empty($this->textPlain) || !empty($this->textHtml))) {
       $i++;
       $multiTypes[$i] = 'multipart/mixed';
-      #----
       if (!empty($this->textPlain)) {
         $i++;
         $multiTypes[$i] = 'multipart/alternative';
-        #----
         if (!empty($this->textHtml)) {
           $i++;
           $multiTypes[$i] = 'multipart/related';
@@ -1376,18 +1374,9 @@ class universalPHPmailer {
    */
   private function getBoundary($key) {
     if (empty($this->boundary[$key])) {
-      $this->boundary[$key] = '__'. strtoupper(substr(sha1($key . microtime(true)), 0, 8)) .':'. $this->getRBstring() .'__';
+      $this->boundary[$key] = '__'. strtoupper(substr(sha1($key . microtime(true)), 0, 8)) .':'. strtoupper(sha1($this->messageId)) .'__';
     }
     return $this->boundary[$key];
-  }
-
-
-  /**
-   * Returns random string.
-   * @return string
-   */
-  private function getRBstring() {
-    return (!empty($this->RBstring)) ? $this->RBstring : $this->ranStr();
   }
 
 
@@ -1412,7 +1401,7 @@ class universalPHPmailer {
     }
     $tim = str_replace('.', '', microtime(true));
     $tim = strtoupper(base_convert(dechex($tim), 16, 36));
-    $this->messageId = $tim .'.'. $this->getRBstring() .'@'. $this->hostName;
+    $this->messageId = $tim .'.'. $this->ranStr() .'@'. $this->hostName;
     return 'Message-ID: <'. $this->messageId .'>';
   }
 
