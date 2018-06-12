@@ -2,7 +2,7 @@
 /**
  * Universal PHP Mailer
  *
- * @version    4.0 (2018-06-09 06:27:00 GMT)
+ * @version    4.1 (2018-06-12 06:39:00 GMT)
  * @author     Peter Kahl <https://github.com/peterkahl>
  * @copyright  2016-2018 Peter Kahl
  * @license    Apache License, Version 2.0
@@ -44,7 +44,7 @@ class universalPHPmailer {
    * Version
    * @var string
    */
-  const VERSION = '4.0';
+  const VERSION = '4.1';
 
   /**
    * Method used to send mail
@@ -355,10 +355,10 @@ class universalPHPmailer {
   private $messageId;
 
   /**
-   * Randomly generated string for boundaries
+   * Randomly generated string.
    * @var string
    */
-  private $rbstr;
+  private $RBstring;
 
   /**
    * Multipart message boundaries
@@ -605,7 +605,6 @@ class universalPHPmailer {
         }
         $subject = preg_replace('/^Subject:\s/', '', $this->encodeHeader('Subject', $this->SanitisedSubject));
         $headers = implode(self::CRLF, $this->mimeHeaders) . self::CRLF;
-        #----
         if (mail($to, $subject, $this->mimeBody, $headers, '-f'. $this->fromEmail) !== false) {
           $this->CounterSuccess++;
           return array(
@@ -718,9 +717,7 @@ class universalPHPmailer {
 
     if ($this->forceSMTPsecure) {
       if (!empty($this->CAfile)) {
-        #----
         $this->debug('Using CA certificate file '. $this->CAfile);
-        #----
         stream_context_set_option($context, 'ssl', 'cafile',            $this->CAfile);
         stream_context_set_option($context, 'ssl', 'verify_host',       true);
         stream_context_set_option($context, 'ssl', 'verify_peer',       true);
@@ -736,13 +733,11 @@ class universalPHPmailer {
     }
 
     $this->SMTPsocket = stream_socket_client($this->SMTPserver .':'. $this->SMTPport, $errno, $errstr, $this->SMTPtimeout, STREAM_CLIENT_CONNECT, $context);
-    #----------
+
     $this->debug('Connecting to server '. strtoupper($this->SMTPserver) .' on port '. $this->SMTPport .' ...');
-    #----------
+
     if (!is_resource($this->SMTPsocket)) {
-      #----------
       $this->debug('ERROR: Failed to connect: '. $errstr .' ('. $errno .')');
-      #----------
       return false;
     }
 
@@ -768,8 +763,6 @@ class universalPHPmailer {
 250 SMTPUTF8
 */
     $this->updateExtensionList();
-
-    #---------------------------------------------------------
 
     if ($this->isCapable('STARTTLS')) {
       if (!$this->forceSMTPsecure && (!empty($this->CAfile) || !empty($this->SMTPusername) || !empty($this->SMTPpassword))) {
@@ -798,8 +791,9 @@ class universalPHPmailer {
 
 
   /**
-   *
-   *
+   * Is SMTP server capable?
+   * @param  string  $ext
+   * @return boolean
    */
   private function isCapable($ext) {
     if (empty($this->SMTPextensions)) {
@@ -810,8 +804,8 @@ class universalPHPmailer {
 
 
   /**
-   *
-   *
+   * Gets us authenticated to SMTP server.
+   * @return boolean
    */
   private function authenticate() {
 
@@ -874,8 +868,8 @@ class universalPHPmailer {
 
 
   /**
-   *
-   *
+   * STARTTLS to SMTP server.
+   * @return boolean
    */
   private function startTLS() {
     if (!$this->sendCommand('STARTTLS', 220)) {
@@ -908,7 +902,7 @@ class universalPHPmailer {
 
 
   /**
-   *
+   * Updates list of supported extensions of SMTP server.
    *
    */
   private function updateExtensionList() {
@@ -1041,7 +1035,7 @@ class universalPHPmailer {
     $this->mimeHeaders = array();
     $this->mimeBody    = '';
 
-    $this->rbstr = false;
+    $this->RBstring = null;
     $this->setEncoding();
 
     if ($this->mailMethod != 'mail') {
@@ -1085,7 +1079,7 @@ class universalPHPmailer {
     }
 
     if ($this->Xmailer === true) {
-      $this->mimeHeaders[] = $this->foldLine('X-Mailer: Version/'. self::VERSION .' <https://github.com/peterkahl/Universal-PHP-Mailer>');
+      $this->mimeHeaders[] = $this->foldLine('X-Mailer: Version/'. self::VERSION .' (https://github.com/peterkahl/Universal-PHP-Mailer)');
     }
     elseif (is_string($this->Xmailer) && strlen($this->Xmailer) > 0) {
       $this->mimeHeaders[] = $this->foldLine('X-Mailer: '. $this->sanitiseHeader($this->Xmailer));
@@ -1255,7 +1249,7 @@ class universalPHPmailer {
    * @return boolean
    */
   private function isReservedHeader($str) {
-    return (in_array(strtolower($str), $this->ReservedHeaders));
+    return in_array(strtolower($str), $this->ReservedHeaders);
   }
 
 
@@ -1381,13 +1375,19 @@ class universalPHPmailer {
    * @return string
    */
   private function getBoundary($key) {
-    if (empty($this->rbstr)) {
-      $this->rbstr = strtoupper(sha1(microtime(true)));
-    }
     if (empty($this->boundary[$key])) {
-      $this->boundary[$key] = '__'. strtoupper(substr(sha1($key . microtime(true)), 0, 8)) .':'. $this->rbstr .'__';
+      $this->boundary[$key] = '__'. strtoupper(substr(sha1($key . microtime(true)), 0, 8)) .':'. $this->getRBstring() .'__';
     }
     return $this->boundary[$key];
+  }
+
+
+  /**
+   * Returns random string.
+   * @return string
+   */
+  private function getRBstring() {
+    return (!empty($this->RBstring)) ? $this->RBstring : $this->ranStr();
   }
 
 
@@ -1396,7 +1396,7 @@ class universalPHPmailer {
    *
    */
   private function unsetBoundaries() {
-    unset($this->rbstr);
+    $this->RBstring = null;
     $this->boundary = array();
   }
 
@@ -1412,7 +1412,7 @@ class universalPHPmailer {
     }
     $tim = str_replace('.', '', microtime(true));
     $tim = strtoupper(base_convert(dechex($tim), 16, 36));
-    $this->messageId = $tim .'.'. $this->ranStr() .'@'. $this->hostName;
+    $this->messageId = $tim .'.'. $this->getRBstring() .'@'. $this->hostName;
     return 'Message-ID: <'. $this->messageId .'>';
   }
 
@@ -1421,9 +1421,8 @@ class universalPHPmailer {
    * Returns a randomly generated string of base-36 characters.
    * @return string
    */
-  private function ranStr() {
-    $bytes = 6;
-    $len   = 8;
+  private function ranStr($len = 8) {
+    $bytes = $len;
     if (function_exists('random_bytes')) {
       $str = bin2hex(random_bytes($bytes));
     }

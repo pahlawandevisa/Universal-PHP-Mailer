@@ -55,6 +55,7 @@ $mailor->CAfile          = '/path/to/cacert.pem';      # Where we keep the CA bu
 $mailor->SMTPhelo        = 'www.myamazingwebsite.com'; # Our HELO hostname
 $mailor->CacheDir        = '/path/to/cache_dir';       # Writeable directory
 $mailor->hostName        = 'myamazingwebsite.com';     # For Message ID header
+$mailor->DateHeaderZone  = 'Europe/London';            # Time zone for date header (new in version 4.0)
 
 // Subject. What's this about.
 $mailor->Subject = 'Vibrant growth on epic scale';
