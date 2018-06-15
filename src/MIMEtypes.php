@@ -2,9 +2,9 @@
 /**
  * MIME Types
  *
- * @version    3.6 (2017-12-20 07:30:24 GMT)
+ * @version    2018-06-14 08:48:00 GMT
  * @author     Peter Kahl <https://github.com/peterkahl>
- * @copyright  2016-2017 Peter Kahl
+ * @copyright  2016-2018 Peter Kahl
  * @license    Apache License, Version 2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,7 +18,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
  */
 
 namespace peterkahl\universalPHPmailer;
@@ -27,6 +26,13 @@ use \Exception;
 
 class MIMEtypes {
 
+
+  /**
+   * Get MIME type.
+   * @param  string  $ext  file extension
+   * @return string
+   * @throws \Exception
+   */
   public static function getType($ext) {
     if (array_key_exists($ext, self::$mimeType)) {
       return self::$mimeType[$ext][0];
@@ -34,11 +40,10 @@ class MIMEtypes {
     throw new Exception('Unknown mime type for given extension');
   }
 
-  #===================================================================
 
   /**
    * https://gist.github.com/nimasdj/801b0b1a50112ea6a997
-   *
+   * @var  array
    */
   private static $mimeType = array(
     '3dm' => array('x-world/x-3dmf'),

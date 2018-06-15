@@ -6,6 +6,15 @@
 
 Easy to use mailer capable of sending any type of content including plain text, HTML, inline images, and any kind and any number of attachments. The value of this library lies in that it generates whole mail string including all headers in compliance with standards, while being very simple to integrate into your system.
 
+### Some Features
+
+* Send emails with multiple To:, Cc:, Bcc: and Reply-To: addresses
+* Send emails with 1 or more attachments
+* Send emails having nothing but 1 attachment
+* Send emails of any complexity (plain, HTML, inline images, attachments)
+* UTF-8 support for headers and message body text
+
+
 ### Automatic Configuration & Ease of Integration
 
 Say, you want to email a message consisting *only* of a PDF attachment. Nothing else. No text. How do you do that? You need not worry! Take your attachment, apply it to the Mailer and voila! Done.
@@ -47,15 +56,15 @@ $mailor = new universalPHPmailer;
 
 // Set the parameters
 $mailor->SMTPserver      = 'smtp.gmail.com';           # The SMTP host we will connect to
-$mailor->SMTPport        = 587;                        # using this port
+$mailor->SMTPport        = 587;                        # using this port; default is 25
 $mailor->SMTPusername    = 'example@gmail.com';        # username for authentication
 $mailor->SMTPpassword    = '************************'; # password
-$mailor->forceSMTPsecure = true;                       # Use only encrypted connection
+$mailor->forceSMTPsecure = true;                       # Insist on STARTTLS and nothing else.
 $mailor->CAfile          = '/path/to/cacert.pem';      # Where we keep the CA bundle
 $mailor->SMTPhelo        = 'www.myamazingwebsite.com'; # Our HELO hostname
 $mailor->CacheDir        = '/path/to/cache_dir';       # Writeable directory
 $mailor->hostName        = 'myamazingwebsite.com';     # For Message ID header
-$mailor->DateHeaderZone  = 'Europe/London';            # Time zone for date header (new in version 4.0)
+$mailor->DateHeaderZone  = 'Europe/London';            # Time zone for date header (new in version 4.0); default is Etc/GMT
 
 // Subject. What's this about.
 $mailor->Subject = 'Vibrant growth on epic scale';
@@ -325,13 +334,6 @@ This package uses simple email address validation. It is advised that you valida
 
 ***
 
-## Acknowledgements
+### Acknowledgement
 
-Peter Kahl had written much of the SMTP-related methods of this package as a result of inspiration from the following class and extends his thanks to the authors thereof:
-
-> PHPMailer RFC821 SMTP email transport class.
-> Implements RFC 821 SMTP commands and provides some utility methods for sending mail to an SMTP server.
-> @package PHPMailer
-> @author Chris Ryan
-> @author Marcus Bointon <phpmailer@synchromedia.co.uk>
-> <https://github.com/PHPMailer/PHPMailer/blob/master/class.smtp.php>
+The SMTP-related methods of this package are a fork from [https://github.com/PHPMailer/PHPMailer/blob/master/class.smtp.php](https://github.com/PHPMailer/PHPMailer/blob/master/class.smtp.php)
