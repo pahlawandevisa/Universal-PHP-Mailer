@@ -2,8 +2,10 @@
 /**
  * Universal PHP Mailer
  *
- * @version    4.2 (2018-06-12 07:28:00 GMT)
+ * @version    4.3 (2018-06-16 05:29:00 GMT)
  * @author     Peter Kahl <https://github.com/peterkahl>
+ *             SMTP methods are a fork of
+ *             <https://github.com/PHPMailer/PHPMailer/blob/master/class.smtp.php>
  * @copyright  2016-2018 Peter Kahl
  * @license    Apache License, Version 2.0
  *
@@ -18,17 +20,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
- * Peter Kahl had written much of the SMTP-related methods of this
- * package as a result of inspiration from the following class and
- * extends his thanks to the authors thereof:
- *
- * PHPMailer RFC821 SMTP email transport class.
- * Implements RFC 821 SMTP commands and provides some utility methods for sending mail to an SMTP server.
- * @package PHPMailer
- * @author Chris Ryan
- * @author Marcus Bointon <phpmailer@synchromedia.co.uk>
- * <https://github.com/PHPMailer/PHPMailer/blob/master/class.smtp.php>
  */
 
 namespace peterkahl\universalPHPmailer;
@@ -44,7 +35,7 @@ class universalPHPmailer {
    * Version
    * @var string
    */
-  const VERSION = '4.1';
+  const VERSION = '4.3';
 
   /**
    * Method used to send mail
@@ -128,7 +119,7 @@ class universalPHPmailer {
 
   /**
    * X-Mailer header
-   * @var possible values
+   * @var mixed possible values
    * true (boolean) ......... default X-Mailer header will be inserted
    * false (boolean) ........ X-Mailer header will not be inserted
    * '' (empty string) ...... X-Mailer header will not be inserted
@@ -289,6 +280,21 @@ class universalPHPmailer {
   public $DateHeaderStr;
 
   /**
+   * Date string for the Reply-To header (optional).
+   * Specify 1 or more pairs.
+   * @var mixed
+   * Valid format --
+   * array(email => name)
+   */
+  public $ReplyToHeader;
+
+  /**
+   * Sanitised version of ReplyToHeader.
+   * @var mixed
+   */
+  private $SanitisedReplyToHeader;
+
+  /**
    * Date header UNIX timezone (optional).
    * If you define this, the Date header will be converted into
    * desired timezone, else GMT will be used.
@@ -329,6 +335,7 @@ class universalPHPmailer {
     'from',
     'date',
     'sender',
+    'reply-to',
     'x-mailer',
     'mime-version',
   );
@@ -342,7 +349,7 @@ class universalPHPmailer {
 
   /**
    * Email from
-   * Automatically generated.
+   * Automatically generated. Used for SMTP handshake.
    * @var string
    */
   private $fromEmail;
@@ -498,6 +505,11 @@ class universalPHPmailer {
   }
 
 
+  /**
+   * Sends email message with given content.
+   * @throws \Exception
+   * @return mixed
+   */
   public function sendMessage() {
 
     if ($this->mailMethod != 'smtp' && $this->mailMethod != 'mail') {
@@ -556,7 +568,7 @@ class universalPHPmailer {
           $this->SanitisedFrom[$email] = $name;
           $this->fromEmail = $email; # used for SMTP handshake
           $senderDefined = true;
-          break;
+          break; # Only 1 pair
         }
       }
     }
@@ -573,7 +585,17 @@ class universalPHPmailer {
           $this->SanitisedSender[$email] = $name;
           $this->fromEmail = $email; # used for SMTP handshake
           $senderDefined = true;
-          break;
+          break; # Only 1 pair
+        }
+      }
+    }
+
+    $this->SanitisedReplyToHeader = array();
+    if (!empty($this->ReplyToHeader)) {
+      foreach ($this->ReplyToHeader as $email => $name) {
+        if ($this->ValidEmail($email)) {
+          $name = $this->sanitiseHeader($name);
+          $this->SanitisedReplyToHeader[$email] = $name;
         }
       }
     }
@@ -1062,6 +1084,10 @@ class universalPHPmailer {
 
     if (!empty($this->SanitisedSender)) {
       $this->mimeHeaders[] = $this->encodeNameHeader('Sender', $this->SanitisedSender);
+    }
+
+    if (!empty($this->SanitisedReplyToHeader)) {
+      $this->mimeHeaders[] = $this->encodeNameHeader('Reply-To', $this->SanitisedReplyToHeader);
     }
 
     $this->mimeHeaders[] = $this->getHeaderDate();
@@ -1810,7 +1836,7 @@ class universalPHPmailer {
    * @return string
    */
   private function Benchmark($st) {
-    $val = (microtime(true) - $st);
+    $val = microtime(true) - $st;
     if ($val >= 1) {
       return number_format($val, 2, '.', ',') .' sec';
     }

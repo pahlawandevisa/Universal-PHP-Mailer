@@ -72,27 +72,33 @@ $mailor->Subject = 'Vibrant growth on epic scale';
 // Who the sender is.
 $mailor->SenderFrom = array('james.jones@hotmai1.con' => 'James Jones');
 
-// Only 1 To: recipient.
+// Only 1 To
 $mailor->RecipientTo = array(
                             'john.smith@hotmai1.con' => 'John Smith'
                             );
 
-// Or multiple To: recipients.
+// Or multiple To
 $mailor->RecipientTo = array(
                             'john.smith@hotmai1.con' => 'John Smith',
                             'paul.smith@hotmai1.con' => 'Paul',
                             'jane@hotmai1.con'       => '',
                             );
 
-// You may have some Cc: recipients.
+// You may have some Cc
 $mailor->RecipientCc = array(
                             'paul.smith@hotmai1.con' => 'Paul',
                             'jane@hotmai1.con'       => '',
                             );
 
-// You may have 1 or more Bcc: recipients.
+// You may have 1 or more Bcc
 $mailor->RecipientBcc = array(
                             'root@hotmai1.con'       => 'Sean Connolly',
+                            );
+
+// You may have 1 or more Reply-To
+$mailor->ReplyToHeader = array(
+                            'pauline.smith@hotmai1.con' => 'Pauline',
+                            'john@hotmai1.con'          => '',
                             );
 
 ```
