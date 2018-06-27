@@ -2,7 +2,7 @@
 /**
  * Universal PHP Mailer
  *
- * @version    4.3 (2018-06-16 05:29:00 GMT)
+ * @version    4.3.1 (2018-06-27 04:34:00 GMT)
  * @author     Peter Kahl <https://github.com/peterkahl>
  *             SMTP methods are a fork of
  *             <https://github.com/PHPMailer/PHPMailer/blob/master/class.smtp.php>
@@ -35,7 +35,7 @@ class universalPHPmailer {
    * Version
    * @var string
    */
-  const VERSION = '4.3';
+  const VERSION = '4.3.1';
 
   /**
    * Method used to send mail
@@ -1192,7 +1192,7 @@ class universalPHPmailer {
             if (!empty($this->textContentLanguage)) {
               $this->mimeBody .= 'Content-Language: '. $this->textContentLanguage . self::CRLF;
             }
-            $this->mimeBody .= 'Content-type: text/plain; charset='. self::CHARSET . self::CRLF;
+            $this->mimeBody .= 'Content-Type: text/plain; charset='. self::CHARSET . self::CRLF;
             $this->mimeBody .= 'Content-Transfer-Encoding: '. $this->textEncoding . self::CRLF;
             $this->mimeBody .= self::CRLF;
             $this->mimeBody .= $this->encodeBody(trim($this->textPlain)) . self::CRLF;
@@ -1203,7 +1203,7 @@ class universalPHPmailer {
             if (!empty($this->textContentLanguage)) {
               $this->mimeBody .= 'Content-Language: '. $this->textContentLanguage . self::CRLF;
             }
-            $this->mimeBody .= 'Content-type: text/html; charset='. self::CHARSET . self::CRLF;
+            $this->mimeBody .= 'Content-Type: text/html; charset='. self::CHARSET . self::CRLF;
             $this->mimeBody .= 'Content-Transfer-Encoding: '. $this->textEncoding . self::CRLF;
             $this->mimeBody .= self::CRLF;
             $this->mimeBody .= $this->encodeBody(trim($this->textHtml)) . self::CRLF;
@@ -1236,7 +1236,7 @@ class universalPHPmailer {
         if (!empty($this->textContentLanguage)) {
           $this->mimeHeaders[] = 'Content-Language: '. $this->textContentLanguage;
         }
-        $this->mimeHeaders[] = 'Content-type: text/plain; charset='. self::CHARSET;
+        $this->mimeHeaders[] = 'Content-Type: text/plain; charset='. self::CHARSET;
         $this->mimeHeaders[] = 'Content-Transfer-Encoding: '. $this->textEncoding;
         $this->mimeBody      = $this->encodeBody(trim($this->textPlain));
       }
@@ -1244,7 +1244,7 @@ class universalPHPmailer {
         if (!empty($this->textContentLanguage)) {
           $this->mimeHeaders[] = 'Content-Language: '. $this->textContentLanguage;
         }
-        $this->mimeHeaders[] = 'Content-type: text/html; charset='. self::CHARSET;
+        $this->mimeHeaders[] = 'Content-Type: text/html; charset='. self::CHARSET;
         $this->mimeHeaders[] = 'Content-Transfer-Encoding: '. $this->textEncoding;
         $this->mimeBody      = $this->encodeBody(trim($this->textHtml));
       }
