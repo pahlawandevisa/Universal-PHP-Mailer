@@ -2,7 +2,7 @@
 /**
  * Universal PHP Mailer
  *
- * @version    4.3.1 (2018-06-27 04:34:00 GMT)
+ * @version    4.4 (2018-08-04 08:03:00 GMT)
  * @author     Peter Kahl <https://github.com/peterkahl>
  *             SMTP methods are a fork of
  *             <https://github.com/PHPMailer/PHPMailer/blob/master/class.smtp.php>
@@ -35,7 +35,7 @@ class universalPHPmailer {
    * Version
    * @var string
    */
-  const VERSION = '4.3.1';
+  const VERSION = '4.4';
 
   /**
    * Method used to send mail
@@ -131,13 +131,20 @@ class universalPHPmailer {
    * Absolute path to the writeable cache directory
    * @var string
    */
-  public $CacheDir;
+  public $CacheDir = '';
 
   /**
-   * File name of debug log, starting with slash.
+   * File name of debug log, *starting with slash*.
    * @var string
    */
   const LOGFILENAME = '/SMTP.log';
+
+  /**
+   * Cache file name of debug log,
+   * created by concatenation of CacheDir + LOGFILENAME
+   * @var string
+   */
+  private $CacheFile;
 
   /**
    * Enable debug
@@ -495,6 +502,7 @@ class universalPHPmailer {
     $this->last_reply     = '';
     $this->CounterSuccess = 0;
     $this->CounterReject  = 0;
+    $this->hostName       = '';
   }
 
 
@@ -511,6 +519,11 @@ class universalPHPmailer {
    * @return mixed
    */
   public function sendMessage() {
+
+    if (empty($this->CacheDir)) {
+      throw new Exception('May be you didn\'t define the cache directory?');
+    }
+    $this->CacheFile = str_replace('\\\\', '\\', $this->CacheDir . self::LOGFILENAME);
 
     if ($this->mailMethod != 'smtp' && $this->mailMethod != 'mail') {
       throw new Exception('Illegal value of property mailMethod');
@@ -602,7 +615,18 @@ class universalPHPmailer {
 
     $this->SanitisedSubject = $this->sanitiseHeader($this->Subject);
 
-    # Boundaries must be unique for each message
+    /**
+     * If host name isn't given, we will create it from the
+     * domain part of sender's email address.
+     */
+    if (empty($this->hostName)) {
+      $this->hostName = $this->endExplode('@', $this->fromEmail);
+    }
+
+
+    /**
+     * Boundaries must be unique for each message.
+     */
     $this->unsetBoundaries();
 
     $this->composeMessage();
@@ -630,7 +654,7 @@ class universalPHPmailer {
         if (mail($to, $subject, $this->mimeBody, $headers, '-f'. $this->fromEmail) !== false) {
           $this->CounterSuccess++;
           return array(
-            'messgid' => $this->messageId,
+            'messgid' => $this->getMessageId(),
             'mailstr' => $this->mailString,
           );
         }
@@ -650,7 +674,7 @@ class universalPHPmailer {
         if ($this->SMTPmail()) {
           $this->CounterSuccess++;
           return array(
-            'messgid' => $this->messageId,
+            'messgid' => $this->getMessageId(),
             'mailstr' => $this->mailString,
           );
         }
@@ -1305,9 +1329,6 @@ class universalPHPmailer {
    * @throws \Exception
    */
   public function addInlineImage($filename) {
-    if (empty($this->hostName)) {
-      throw new Exception('Property hostName must be defined prior to calling this method');
-    }
     if (!file_exists($filename)) {
       throw new Exception('Could not read file "'. $filename .'"');
     }
@@ -1400,7 +1421,7 @@ class universalPHPmailer {
    */
   private function getBoundary($key) {
     if (empty($this->boundary[$key])) {
-      $this->boundary[$key] = '__'. strtoupper(substr(sha1($key . microtime(true)), 0, 8)) .':'. strtoupper(sha1($this->messageId)) .'__';
+      $this->boundary[$key] = '__'. strtoupper(substr(sha1($key . microtime(true)), 0, 8)) .':'. strtoupper(sha1($this->getMessageId())) .'__';
     }
     return $this->boundary[$key];
   }
@@ -1417,18 +1438,31 @@ class universalPHPmailer {
 
 
   /**
-   * Returns the Message ID header
+   * Returns Message ID header
    * @return string
    * @throws \Exception
    */
   private function getHeaderMessageId() {
+    return 'Message-ID: <'. $this->getMessageId() .'>';
+  }
+
+
+  /**
+   * Returns Message ID of this format:
+   *    'TIME.RANDSTRING@hostname'
+   * @return string
+   * @throws \Exception
+   */
+  private function getMessageId() {
     if (empty($this->hostName)) {
       throw new Exception('Undefined property hostName');
     }
-    $tim = str_replace('.', '', microtime(true));
-    $tim = strtoupper(base_convert(dechex($tim), 16, 36));
-    $this->messageId = $tim .'.'. $this->ranStr() .'@'. $this->hostName;
-    return 'Message-ID: <'. $this->messageId .'>';
+    if (empty($this->messageId)) {
+      $tim = str_replace('.', '', microtime(true));
+      $tim = strtoupper(base_convert(dechex($tim), 16, 36));
+      $this->messageId = $tim .'.'. $this->ranStr() .'@'. $this->hostName;
+    }
+    return $this->messageId;
   }
 
 
@@ -1781,7 +1815,7 @@ class universalPHPmailer {
       $str = substr($str, 0, 1000) .' ... [truncated]';
     }
     list($sec, $usec) = explode('.', number_format(microtime(true), 3, '.', ''));
-    $this->FileAppendContents($this->CacheDir . self::LOGFILENAME, '['. gmdate("Y-m-d H:i:s", $sec + $this->serverTZoffset) .'.'. $usec .'] '. $str . PHP_EOL);
+    $this->FileAppendContents($this->CacheFile, '['. gmdate("Y-m-d H:i:s", $sec + $this->serverTZoffset) .'.'. $usec .'] '. $str . PHP_EOL);
   }
 
 
@@ -1792,6 +1826,16 @@ class universalPHPmailer {
    * @throws \Exception
    */
   private function FileAppendContents($file, $str) {
+    $bytes = 0;
+    $a = 0;
+    while (!file_exists($file) || !is_readable($file)) {
+      $a++;
+      if ($a > 1000000) {
+        throw new Exception('Kept trying for 1 sec and still couldn\'t access file');
+      }
+      usleep(1);
+    }
+
     $fileObj = new SplFileObject($file, 'a');
     $k = 0;
     while (!$fileObj->flock(LOCK_EX)) {
