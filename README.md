@@ -8,11 +8,13 @@ Easy to use mailer capable of sending any type of content including plain text, 
 
 ### Some Features
 
-* Send emails with multiple To:, Cc:, Bcc: and Reply-To: addresses
+* Send emails with multiple To, Cc, Bcc and Reply-To addresses
 * Send emails with 1 or more attachments
 * Send emails having nothing but 1 attachment
 * Send emails of any complexity (plain, HTML, inline images, attachments)
 * UTF-8 support for headers and message body text
+* Time zone support for Date header
+* Logging for debug etc.
 
 
 ### Automatic Configuration & Ease of Integration
