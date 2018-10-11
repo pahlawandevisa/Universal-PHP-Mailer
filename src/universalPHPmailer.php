@@ -2,7 +2,7 @@
 /**
  * Universal PHP Mailer
  *
- * @version    4.4 (2018-08-04 08:03:00 GMT)
+ * @version    4.5 (2018-10-07 06:06:00 UTC)
  * @author     Peter Kahl <https://github.com/peterkahl>
  *             SMTP methods are a fork of
  *             <https://github.com/PHPMailer/PHPMailer/blob/master/class.smtp.php>
@@ -35,7 +35,7 @@ class universalPHPmailer {
    * Version
    * @var string
    */
-  const VERSION = '4.4';
+  const VERSION = '4.5';
 
   /**
    * Method used to send mail
@@ -1490,18 +1490,33 @@ class universalPHPmailer {
 
   /**
    * Returns the Date header as per RFC5322.
+   * @throws \Exception
    * @return string
    */
   private function getHeaderDate() {
     if (empty($this->DateHeaderStr)) {
       if (!empty($this->DateHeaderZone)) {
-        $newObj = new DateTime('now', new DateTimeZone($this->DateHeaderZone));
-        $suffix = !empty($newObj->format('T')) ? ' ('. $newObj->format('T') .')' : '';
-        return 'Date: '. $newObj->format('D, j M Y H:i:s O') . $suffix;
+        $this->ValidateTimeZoneString($this->DateHeaderZone);
+        $DateObj = new DateTime('now', new DateTimeZone('Etc/GMT'));
+        $DateObj->setTimeZone(new DateTimeZone($this->DateHeaderZone));
+        $suffix = !empty($DateObj->format('T')) ? ' ('. $DateObj->format('T') .')' : '';
+        return 'Date: '. $DateObj->format('D, j M Y H:i:s O') . $suffix;
       }
       return 'Date: '. gmdate('D, j M Y H:i:s O (T)');
     }
     return 'Date: '. $this->sanitiseHeader($this->DateHeaderStr);
+  }
+
+
+  /**
+   * Validates timezone string.
+   * @param  string  $str ...... Timezone string, ex. 'Europe/London', 'Asia/Hong_Kong'
+   * @throws \Exception
+   */
+  private function ValidateTimeZoneString($str) {
+    if (!preg_match('/^[A-Z]{3}|[A-Z][a-z_\/]{2,20}$/', $str)) {
+      throw new Exception('Illegal timezone string format');
+    }
   }
 
 
